@@ -1,12 +1,12 @@
 import styles from './styles/styles.css';
 
-export function initVirtualTrackball() {
+export function initVirtualTrackball(): void {
     if (document.getElementById('vt-widget-container')) return;
 
     if (!document.getElementById('vt-styles')) {
         const style = document.createElement('style');
         style.id = 'vt-styles';
-        style.textContent = styles;
+        style.textContent = styles as unknown as string;
         document.head.appendChild(style);
     }
 
@@ -36,12 +36,12 @@ export function initVirtualTrackball() {
     container.style.left = currentLeft + 'px';
     container.style.top = currentTop + 'px';
 
-    const dragHandle = document.getElementById('vt-drag-handle');
+    const dragHandle = document.getElementById('vt-drag-handle') as HTMLElement;
     let isWidgetDragging = false;
     let startMouseX = 0, startMouseY = 0;
     let startLeft = 0, startTop = 0;
 
-    dragHandle.addEventListener('pointerdown', (e) => {
+    dragHandle.addEventListener('pointerdown', (e: PointerEvent) => {
         isWidgetDragging = true;
         container.classList.add('is-dragging');
         startMouseX = e.clientX; startMouseY = e.clientY;
@@ -50,7 +50,7 @@ export function initVirtualTrackball() {
         e.stopPropagation();
     });
 
-    dragHandle.addEventListener('pointermove', (e) => {
+    dragHandle.addEventListener('pointermove', (e: PointerEvent) => {
         if (!isWidgetDragging) return;
         currentLeft = startLeft + (e.clientX - startMouseX);
         currentTop = startTop + (e.clientY - startMouseY);
@@ -58,7 +58,7 @@ export function initVirtualTrackball() {
         container.style.top = currentTop + 'px';
     });
 
-    function snapToEdge() {
+    function snapToEdge(): void {
         const margin = 24;
         const snapDist = 80;
         const rect = container.getBoundingClientRect();
@@ -77,7 +77,7 @@ export function initVirtualTrackball() {
         container.style.top = currentTop + 'px';
     }
 
-    dragHandle.addEventListener('pointerup', (e) => {
+    dragHandle.addEventListener('pointerup', (e: PointerEvent) => {
         isWidgetDragging = false;
         container.classList.remove('is-dragging');
         dragHandle.releasePointerCapture(e.pointerId);
@@ -86,8 +86,8 @@ export function initVirtualTrackball() {
 
     window.addEventListener('resize', snapToEdge);
 
-    const toggleBtn = document.getElementById('vt-toggle-btn');
-    const trackballArea = document.getElementById('vt-trackball-area');
+    const toggleBtn = document.getElementById('vt-toggle-btn') as HTMLElement;
+    const trackballArea = document.getElementById('vt-trackball-area') as HTMLElement;
 
     toggleBtn.addEventListener('click', () => {
         container.classList.toggle('vt-mini');
@@ -103,29 +103,29 @@ export function initVirtualTrackball() {
         }
     });
 
-    const viewport = document.getElementById('vt-viewport');
-    const texture = document.getElementById('vt-texture');
+    const viewport = document.getElementById('vt-viewport') as HTMLElement;
+    const texture = document.getElementById('vt-texture') as HTMLElement;
     let texPosX = 0, texPosY = 0;
     let isTrackballDragging = false;
     let tbPrevMouseX = 0, tbPrevMouseY = 0;
     let velX = 0, velY = 0;
     const friction = 0.92;
 
-    function applyMovement(dx, dy) {
+    function applyMovement(dx: number, dy: number): void {
         const scrollSensitivity = 1.8;
         window.scrollBy(-dx * scrollSensitivity, -dy * scrollSensitivity);
         texPosX += (dx * 1.5); texPosY += (dy * 1.5);
-        texture.style.backgroundPosition = Math.round(texPosX) + "px " + Math.round(texPosY) + "px";
+        texture.style.backgroundPosition = `${Math.round(texPosX)}px ${Math.round(texPosY)}px`;
     }
 
-    viewport.addEventListener('pointerdown', (e) => {
+    viewport.addEventListener('pointerdown', (e: PointerEvent) => {
         isTrackballDragging = true;
         tbPrevMouseX = e.clientX; tbPrevMouseY = e.clientY;
         velX = 0; velY = 0;
         viewport.setPointerCapture(e.pointerId);
     });
 
-    viewport.addEventListener('pointermove', (e) => {
+    viewport.addEventListener('pointermove', (e: PointerEvent) => {
         if (!isTrackballDragging) return;
         const dx = e.clientX - tbPrevMouseX;
         const dy = e.clientY - tbPrevMouseY;
@@ -134,19 +134,19 @@ export function initVirtualTrackball() {
         tbPrevMouseX = e.clientX; tbPrevMouseY = e.clientY;
     });
 
-    viewport.addEventListener('pointerup', (e) => {
+    viewport.addEventListener('pointerup', (e: PointerEvent) => {
         isTrackballDragging = false;
         viewport.releasePointerCapture(e.pointerId);
     });
 
-    viewport.addEventListener('wheel', (e) => {
+    viewport.addEventListener('wheel', (e: WheelEvent) => {
         e.preventDefault();
         velX += -e.deltaX * 0.2; velY += -e.deltaY * 0.2;
         velX = Math.max(-60, Math.min(60, velX));
         velY = Math.max(-60, Math.min(60, velY));
     }, { passive: false });
 
-    function physicsLoop() {
+    function physicsLoop(): void {
         if (!isTrackballDragging) {
             velX *= friction; velY *= friction;
             if (Math.abs(velX) < 0.1) velX = 0;
