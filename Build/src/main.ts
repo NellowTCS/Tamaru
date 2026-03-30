@@ -1,159 +1,196 @@
-import styles from '../styles/styles.css';
+import styles from "../styles/styles.css";
+import { createWidgetContainer, injectStyleTag } from "./dom";
+import {
+  TrackballState,
+  applyMovement,
+  updatePhysics,
+  snapToEdge,
+} from "./trackball";
 
 export function initVirtualTrackball(): void {
-    if (document.getElementById('vt-widget-container')) return;
+  if (document.getElementById("vt-widget-container")) return;
+  injectStyleTag(styles as unknown as string);
+  const container = createWidgetContainer();
+  document.body.appendChild(container);
 
-    if (!document.getElementById('vt-styles')) {
-        const style = document.createElement('style');
-        style.id = 'vt-styles';
-        style.textContent = styles as unknown as string;
-        document.head.appendChild(style);
+  let currentLeft = window.innerWidth - 120 - 24;
+  let currentTop = window.innerHeight - 120 - 24;
+  container.style.left = currentLeft + "px";
+  container.style.top = currentTop + "px";
+
+  const dragHandle = container.querySelector("#vt-drag-handle") as HTMLElement;
+  let isWidgetDragging = false;
+  let startMouseX = 0,
+    startMouseY = 0;
+  let startLeft = 0,
+    startTop = 0;
+
+  dragHandle.addEventListener("pointerdown", (e: PointerEvent) => {
+    isWidgetDragging = true;
+    container.classList.add("is-dragging");
+    startMouseX = e.clientX;
+    startMouseY = e.clientY;
+    startLeft = currentLeft;
+    startTop = currentTop;
+    dragHandle.setPointerCapture(e.pointerId);
+    e.stopPropagation();
+  });
+
+  dragHandle.addEventListener("pointermove", (e: PointerEvent) => {
+    if (!isWidgetDragging) return;
+    currentLeft = startLeft + (e.clientX - startMouseX);
+    currentTop = startTop + (e.clientY - startMouseY);
+    container.style.left = currentLeft + "px";
+    container.style.top = currentTop + "px";
+  });
+
+  function doSnapToEdge() {
+    const rect = container.getBoundingClientRect();
+    const pos = snapToEdge(
+      currentLeft,
+      currentTop,
+      rect,
+      window.innerWidth,
+      window.innerHeight,
+    );
+    currentLeft = pos.left;
+    currentTop = pos.top;
+    container.style.left = currentLeft + "px";
+    container.style.top = currentTop + "px";
+  }
+
+  dragHandle.addEventListener("pointerup", (e: PointerEvent) => {
+    isWidgetDragging = false;
+    container.classList.remove("is-dragging");
+    dragHandle.releasePointerCapture(e.pointerId);
+    doSnapToEdge();
+  });
+
+  window.addEventListener("resize", doSnapToEdge);
+
+  const toggleBtn = container.querySelector("#vt-toggle-btn") as HTMLElement;
+  const trackballArea = container.querySelector(
+    "#vt-trackball-area",
+  ) as HTMLElement;
+
+  toggleBtn.addEventListener("click", () => {
+    container.classList.toggle("vt-mini");
+    toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
+    doSnapToEdge();
+  });
+
+  trackballArea.addEventListener("click", () => {
+    if (container.classList.contains("vt-mini")) {
+      container.classList.remove("vt-mini");
+      toggleBtn.textContent = "-";
+      doSnapToEdge();
     }
+  });
 
-    const container = document.createElement('div');
-    container.id = 'vt-widget-container';
-    // innerHTML is used here for simplicity since the content is static and controlled
-    // but i would prefer to create elements manually later
-    // TODO
-    container.innerHTML = `
-        <div id="vt-controls">
-            <div id="vt-drag-handle" class="vt-btn" title="Drag to move">✥</div>
-            <div id="vt-toggle-btn" class="vt-btn" title="Toggle Size">-</div>
-        </div>
-        <div id="vt-trackball-area">
-            <div id="vt-sphere">
-                <div id="vt-texture"></div>
-                <div id="vt-shading"></div>
-            </div>
-            <div id="vt-viewport"></div>
-            <div id="vt-mini-icon"></div>
-        </div>
-    `;
-    document.body.appendChild(container);
+  const viewport = container.querySelector("#vt-viewport") as HTMLElement;
+  const texture = container.querySelector("#vt-texture") as HTMLElement;
+  const state: TrackballState = {
+    texPosX: 0,
+    texPosY: 0,
+    velX: 0,
+    velY: 0,
+    friction: 0.92,
+  };
+  let isTrackballDragging = false;
+  let tbPrevMouseX = 0,
+    tbPrevMouseY = 0;
 
-    let currentLeft = window.innerWidth - 120 - 24;
-    let currentTop = window.innerHeight - 120 - 24;
-    container.style.left = currentLeft + 'px';
-    container.style.top = currentTop + 'px';
+  function updateTexture(x: number, y: number) {
+    texture.style.backgroundPosition = `${x}px ${y}px`;
+  }
 
-    const dragHandle = document.getElementById('vt-drag-handle') as HTMLElement;
-    let isWidgetDragging = false;
-    let startMouseX = 0, startMouseY = 0;
-    let startLeft = 0, startTop = 0;
+  viewport.addEventListener("pointerdown", (e: PointerEvent) => {
+    isTrackballDragging = true;
+    tbPrevMouseX = e.clientX;
+    tbPrevMouseY = e.clientY;
+    state.velX = 0;
+    state.velY = 0;
+    viewport.setPointerCapture(e.pointerId);
+  });
 
-    dragHandle.addEventListener('pointerdown', (e: PointerEvent) => {
-        isWidgetDragging = true;
-        container.classList.add('is-dragging');
-        startMouseX = e.clientX; startMouseY = e.clientY;
-        startLeft = currentLeft; startTop = currentTop;
-        dragHandle.setPointerCapture(e.pointerId);
-        e.stopPropagation();
-    });
+  viewport.addEventListener("pointermove", (e: PointerEvent) => {
+    if (!isTrackballDragging) return;
+    const dx = e.clientX - tbPrevMouseX;
+    const dy = e.clientY - tbPrevMouseY;
+    state.velX = dx;
+    state.velY = dy;
+    applyMovement(state, dx, dy, window.scrollBy.bind(window), updateTexture);
+    tbPrevMouseX = e.clientX;
+    tbPrevMouseY = e.clientY;
+  });
 
-    dragHandle.addEventListener('pointermove', (e: PointerEvent) => {
-        if (!isWidgetDragging) return;
-        currentLeft = startLeft + (e.clientX - startMouseX);
-        currentTop = startTop + (e.clientY - startMouseY);
-        container.style.left = currentLeft + 'px';
-        container.style.top = currentTop + 'px';
-    });
+  viewport.addEventListener("pointerup", (e: PointerEvent) => {
+    isTrackballDragging = false;
+    viewport.releasePointerCapture(e.pointerId);
+  });
 
-    function snapToEdge(): void {
-        const margin = 24;
-        const snapDist = 80;
-        const rect = container.getBoundingClientRect();
-        const maxLeft = window.innerWidth - rect.width - margin;
-        const maxTop = window.innerHeight - rect.height - margin;
+  viewport.addEventListener(
+    "wheel",
+    (e: WheelEvent) => {
+      e.preventDefault();
+      state.velX += -e.deltaX * 0.2;
+      state.velY += -e.deltaY * 0.2;
+      state.velX = Math.max(-60, Math.min(60, state.velX));
+      state.velY = Math.max(-60, Math.min(60, state.velY));
+    },
+    { passive: false },
+  );
 
-        if (currentLeft < snapDist) currentLeft = margin;
-        if (currentLeft > maxLeft - snapDist + margin) currentLeft = maxLeft;
-        if (currentTop < snapDist) currentTop = margin;
-        if (currentTop > maxTop - snapDist + margin) currentTop = maxTop;
-
-        currentLeft = Math.max(margin, Math.min(currentLeft, maxLeft));
-        currentTop = Math.max(margin, Math.min(currentTop, maxTop));
-
-        container.style.left = currentLeft + 'px';
-        container.style.top = currentTop + 'px';
-    }
-
-    dragHandle.addEventListener('pointerup', (e: PointerEvent) => {
-        isWidgetDragging = false;
-        container.classList.remove('is-dragging');
-        dragHandle.releasePointerCapture(e.pointerId);
-        snapToEdge();
-    });
-
-    window.addEventListener('resize', snapToEdge);
-
-    const toggleBtn = document.getElementById('vt-toggle-btn') as HTMLElement;
-    const trackballArea = document.getElementById('vt-trackball-area') as HTMLElement;
-
-    toggleBtn.addEventListener('click', () => {
-        container.classList.toggle('vt-mini');
-        toggleBtn.textContent = container.classList.contains('vt-mini') ? '+' : '−';
-        snapToEdge();
-    });
-
-    trackballArea.addEventListener('click', () => {
-        if (container.classList.contains('vt-mini')) {
-            container.classList.remove('vt-mini');
-            toggleBtn.textContent = '−';
-            snapToEdge();
-        }
-    });
-
-    const viewport = document.getElementById('vt-viewport') as HTMLElement;
-    const texture = document.getElementById('vt-texture') as HTMLElement;
-    let texPosX = 0, texPosY = 0;
-    let isTrackballDragging = false;
-    let tbPrevMouseX = 0, tbPrevMouseY = 0;
-    let velX = 0, velY = 0;
-    const friction = 0.92;
-
-    function applyMovement(dx: number, dy: number): void {
-        const scrollSensitivity = 1.8;
-        window.scrollBy(-dx * scrollSensitivity, -dy * scrollSensitivity);
-        texPosX += (dx * 1.5); texPosY += (dy * 1.5);
-        texture.style.backgroundPosition = `${Math.round(texPosX)}px ${Math.round(texPosY)}px`;
-    }
-
-    viewport.addEventListener('pointerdown', (e: PointerEvent) => {
-        isTrackballDragging = true;
-        tbPrevMouseX = e.clientX; tbPrevMouseY = e.clientY;
-        velX = 0; velY = 0;
-        viewport.setPointerCapture(e.pointerId);
-    });
-
-    viewport.addEventListener('pointermove', (e: PointerEvent) => {
-        if (!isTrackballDragging) return;
-        const dx = e.clientX - tbPrevMouseX;
-        const dy = e.clientY - tbPrevMouseY;
-        velX = dx; velY = dy;
-        applyMovement(dx, dy);
-        tbPrevMouseX = e.clientX; tbPrevMouseY = e.clientY;
-    });
-
-    viewport.addEventListener('pointerup', (e: PointerEvent) => {
-        isTrackballDragging = false;
-        viewport.releasePointerCapture(e.pointerId);
-    });
-
-    viewport.addEventListener('wheel', (e: WheelEvent) => {
-        e.preventDefault();
-        velX += -e.deltaX * 0.2; velY += -e.deltaY * 0.2;
-        velX = Math.max(-60, Math.min(60, velX));
-        velY = Math.max(-60, Math.min(60, velY));
-    }, { passive: false });
-
-    function physicsLoop(): void {
-        if (!isTrackballDragging) {
-            velX *= friction; velY *= friction;
-            if (Math.abs(velX) < 0.1) velX = 0;
-            if (Math.abs(velY) < 0.1) velY = 0;
-            if (velX !== 0 || velY !== 0) applyMovement(velX, velY);
-        }
-        requestAnimationFrame(physicsLoop);
+  function physicsLoop(): void {
+    if (!isTrackballDragging) {
+      updatePhysics(state, (dx, dy) =>
+        applyMovement(
+          state,
+          dx,
+          dy,
+          window.scrollBy.bind(window),
+          updateTexture,
+        ),
+      );
     }
     requestAnimationFrame(physicsLoop);
+  }
+  requestAnimationFrame(physicsLoop);
+
+  const controls = container.querySelector('#vt-controls') as HTMLElement;
+  let controlsHideTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function setControlsVisible(visible: boolean) {
+    if (visible) {
+      controls.classList.add('vt-controls-visible');
+    } else {
+      controls.classList.remove('vt-controls-visible');
+    }
+  }
+
+  function showControls() {
+    if (controlsHideTimeout) {
+      clearTimeout(controlsHideTimeout);
+      controlsHideTimeout = null;
+    }
+    setControlsVisible(true);
+  }
+
+  function hideControlsWithDelay() {
+    if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
+    controlsHideTimeout = setTimeout(() => {
+      // Only hide if neither container nor controls are hovered
+      if (!container.matches(':hover') && !controls.matches(':hover')) {
+        setControlsVisible(false);
+      }
+    }, 350);
+  }
+
+  container.addEventListener('mouseenter', showControls);
+  container.addEventListener('mouseleave', hideControlsWithDelay);
+  controls.addEventListener('mouseenter', showControls);
+  controls.addEventListener('mouseleave', hideControlsWithDelay);
+
+  // Hide controls initially
+  setControlsVisible(false);
 }

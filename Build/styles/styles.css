@@ -27,8 +27,7 @@
     z-index: 20;
 }
 
-#vt-widget-container:hover #vt-controls,
-#vt-widget-container.vt-mini #vt-controls {
+#vt-controls.vt-controls-visible {
     opacity: 1;
     transform: translate(-50%, -36px) scale(1);
     pointer-events: auto;
