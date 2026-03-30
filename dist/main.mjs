@@ -1,29 +1,3 @@
-"use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/main.ts
-var main_exports = {};
-__export(main_exports, {
-  initVirtualTrackball: () => initVirtualTrackball
-});
-module.exports = __toCommonJS(main_exports);
-
 // styles/styles.css
 var styles_default = `#vt-widget-container {
     position: fixed;
@@ -54,8 +28,7 @@ var styles_default = `#vt-widget-container {
     z-index: 20;
 }
 
-#vt-widget-container:hover #vt-controls,
-#vt-widget-container.vt-mini #vt-controls {
+#vt-controls.vt-controls-visible {
     opacity: 1;
     transform: translate(-50%, -36px) scale(1);
     pointer-events: auto;
@@ -179,37 +152,81 @@ var styles_default = `#vt-widget-container {
     display: block;
 }`;
 
-// src/main.ts
-function initVirtualTrackball() {
-  if (document.getElementById("vt-widget-container")) return;
-  if (!document.getElementById("vt-styles")) {
-    const style = document.createElement("style");
-    style.id = "vt-styles";
-    style.textContent = styles_default;
-    document.head.appendChild(style);
-  }
+// src/dom.ts
+function createWidgetContainer() {
   const container = document.createElement("div");
   container.id = "vt-widget-container";
   container.innerHTML = `
-        <div id="vt-controls">
-            <div id="vt-drag-handle" class="vt-btn" title="Drag to move">\u2725</div>
-            <div id="vt-toggle-btn" class="vt-btn" title="Toggle Size">-</div>
-        </div>
-        <div id="vt-trackball-area">
-            <div id="vt-sphere">
-                <div id="vt-texture"></div>
-                <div id="vt-shading"></div>
-            </div>
-            <div id="vt-viewport"></div>
-            <div id="vt-mini-icon"></div>
-        </div>
-    `;
+    <div id="vt-controls">
+      <div id="vt-drag-handle" class="vt-btn" title="Drag to move">\u2725</div>
+      <div id="vt-toggle-btn" class="vt-btn" title="Toggle Size">-</div>
+    </div>
+    <div id="vt-trackball-area">
+      <div id="vt-sphere">
+        <div id="vt-texture"></div>
+        <div id="vt-shading"></div>
+      </div>
+      <div id="vt-viewport"></div>
+      <div id="vt-mini-icon"></div>
+    </div>
+  `;
+  return container;
+}
+function injectStyleTag(styles) {
+  if (!document.getElementById("vt-styles")) {
+    const style = document.createElement("style");
+    style.id = "vt-styles";
+    style.textContent = styles;
+    document.head.appendChild(style);
+  }
+}
+
+// src/trackball.ts
+function applyMovement(state, dx, dy, scrollCallback, updateTexture) {
+  const scrollSensitivity = 1.8;
+  scrollCallback(-dx * scrollSensitivity, -dy * scrollSensitivity);
+  state.texPosX += dx * 1.5;
+  state.texPosY += dy * 1.5;
+  updateTexture(Math.round(state.texPosX), Math.round(state.texPosY));
+}
+function updatePhysics(state, movementFn) {
+  if (Math.abs(state.velX) >= 0.1 || Math.abs(state.velY) >= 0.1) {
+    state.velX *= state.friction;
+    state.velY *= state.friction;
+    if (Math.abs(state.velX) < 0.1) state.velX = 0;
+    if (Math.abs(state.velY) < 0.1) state.velY = 0;
+    if (state.velX !== 0 || state.velY !== 0)
+      movementFn(state.velX, state.velY);
+  }
+}
+function clamp(val, min, max) {
+  return Math.max(min, Math.min(val, max));
+}
+function snapToEdge(currentLeft, currentTop, containerRect, windowWidth, windowHeight, margin = 24, snapDist = 80) {
+  const maxLeft = windowWidth - containerRect.width - margin;
+  const maxTop = windowHeight - containerRect.height - margin;
+  let left = currentLeft;
+  let top = currentTop;
+  if (left < snapDist) left = margin;
+  if (left > maxLeft - snapDist + margin) left = maxLeft;
+  if (top < snapDist) top = margin;
+  if (top > maxTop - snapDist + margin) top = maxTop;
+  left = clamp(left, margin, maxLeft);
+  top = clamp(top, margin, maxTop);
+  return { left, top };
+}
+
+// src/main.ts
+function initVirtualTrackball() {
+  if (document.getElementById("vt-widget-container")) return;
+  injectStyleTag(styles_default);
+  const container = createWidgetContainer();
   document.body.appendChild(container);
   let currentLeft = window.innerWidth - 120 - 24;
   let currentTop = window.innerHeight - 120 - 24;
   container.style.left = currentLeft + "px";
   container.style.top = currentTop + "px";
-  const dragHandle = document.getElementById("vt-drag-handle");
+  const dragHandle = container.querySelector("#vt-drag-handle");
   let isWidgetDragging = false;
   let startMouseX = 0, startMouseY = 0;
   let startLeft = 0, startTop = 0;
@@ -230,18 +247,17 @@ function initVirtualTrackball() {
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
   });
-  function snapToEdge() {
-    const margin = 24;
-    const snapDist = 80;
+  function doSnapToEdge() {
     const rect = container.getBoundingClientRect();
-    const maxLeft = window.innerWidth - rect.width - margin;
-    const maxTop = window.innerHeight - rect.height - margin;
-    if (currentLeft < snapDist) currentLeft = margin;
-    if (currentLeft > maxLeft - snapDist + margin) currentLeft = maxLeft;
-    if (currentTop < snapDist) currentTop = margin;
-    if (currentTop > maxTop - snapDist + margin) currentTop = maxTop;
-    currentLeft = Math.max(margin, Math.min(currentLeft, maxLeft));
-    currentTop = Math.max(margin, Math.min(currentTop, maxTop));
+    const pos = snapToEdge(
+      currentLeft,
+      currentTop,
+      rect,
+      window.innerWidth,
+      window.innerHeight
+    );
+    currentLeft = pos.left;
+    currentTop = pos.top;
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
   }
@@ -249,52 +265,54 @@ function initVirtualTrackball() {
     isWidgetDragging = false;
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
-    snapToEdge();
+    doSnapToEdge();
   });
-  window.addEventListener("resize", snapToEdge);
-  const toggleBtn = document.getElementById("vt-toggle-btn");
-  const trackballArea = document.getElementById("vt-trackball-area");
+  window.addEventListener("resize", doSnapToEdge);
+  const toggleBtn = container.querySelector("#vt-toggle-btn");
+  const trackballArea = container.querySelector(
+    "#vt-trackball-area"
+  );
   toggleBtn.addEventListener("click", () => {
     container.classList.toggle("vt-mini");
-    toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "\u2212";
-    snapToEdge();
+    toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
+    doSnapToEdge();
   });
   trackballArea.addEventListener("click", () => {
     if (container.classList.contains("vt-mini")) {
       container.classList.remove("vt-mini");
-      toggleBtn.textContent = "\u2212";
-      snapToEdge();
+      toggleBtn.textContent = "-";
+      doSnapToEdge();
     }
   });
-  const viewport = document.getElementById("vt-viewport");
-  const texture = document.getElementById("vt-texture");
-  let texPosX = 0, texPosY = 0;
+  const viewport = container.querySelector("#vt-viewport");
+  const texture = container.querySelector("#vt-texture");
+  const state = {
+    texPosX: 0,
+    texPosY: 0,
+    velX: 0,
+    velY: 0,
+    friction: 0.92
+  };
   let isTrackballDragging = false;
   let tbPrevMouseX = 0, tbPrevMouseY = 0;
-  let velX = 0, velY = 0;
-  const friction = 0.92;
-  function applyMovement(dx, dy) {
-    const scrollSensitivity = 1.8;
-    window.scrollBy(-dx * scrollSensitivity, -dy * scrollSensitivity);
-    texPosX += dx * 1.5;
-    texPosY += dy * 1.5;
-    texture.style.backgroundPosition = `${Math.round(texPosX)}px ${Math.round(texPosY)}px`;
+  function updateTexture(x, y) {
+    texture.style.backgroundPosition = `${x}px ${y}px`;
   }
   viewport.addEventListener("pointerdown", (e) => {
     isTrackballDragging = true;
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    velX = 0;
-    velY = 0;
+    state.velX = 0;
+    state.velY = 0;
     viewport.setPointerCapture(e.pointerId);
   });
   viewport.addEventListener("pointermove", (e) => {
     if (!isTrackballDragging) return;
     const dx = e.clientX - tbPrevMouseX;
     const dy = e.clientY - tbPrevMouseY;
-    velX = dx;
-    velY = dy;
-    applyMovement(dx, dy);
+    state.velX = dx;
+    state.velY = dy;
+    applyMovement(state, dx, dy, window.scrollBy.bind(window), updateTexture);
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
   });
@@ -302,27 +320,64 @@ function initVirtualTrackball() {
     isTrackballDragging = false;
     viewport.releasePointerCapture(e.pointerId);
   });
-  viewport.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    velX += -e.deltaX * 0.2;
-    velY += -e.deltaY * 0.2;
-    velX = Math.max(-60, Math.min(60, velX));
-    velY = Math.max(-60, Math.min(60, velY));
-  }, { passive: false });
+  viewport.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      state.velX += -e.deltaX * 0.2;
+      state.velY += -e.deltaY * 0.2;
+      state.velX = Math.max(-60, Math.min(60, state.velX));
+      state.velY = Math.max(-60, Math.min(60, state.velY));
+    },
+    { passive: false }
+  );
   function physicsLoop() {
     if (!isTrackballDragging) {
-      velX *= friction;
-      velY *= friction;
-      if (Math.abs(velX) < 0.1) velX = 0;
-      if (Math.abs(velY) < 0.1) velY = 0;
-      if (velX !== 0 || velY !== 0) applyMovement(velX, velY);
+      updatePhysics(
+        state,
+        (dx, dy) => applyMovement(
+          state,
+          dx,
+          dy,
+          window.scrollBy.bind(window),
+          updateTexture
+        )
+      );
     }
     requestAnimationFrame(physicsLoop);
   }
   requestAnimationFrame(physicsLoop);
+  const controls = container.querySelector("#vt-controls");
+  let controlsHideTimeout = null;
+  function setControlsVisible(visible) {
+    if (visible) {
+      controls.classList.add("vt-controls-visible");
+    } else {
+      controls.classList.remove("vt-controls-visible");
+    }
+  }
+  function showControls() {
+    if (controlsHideTimeout) {
+      clearTimeout(controlsHideTimeout);
+      controlsHideTimeout = null;
+    }
+    setControlsVisible(true);
+  }
+  function hideControlsWithDelay() {
+    if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
+    controlsHideTimeout = setTimeout(() => {
+      if (!container.matches(":hover") && !controls.matches(":hover")) {
+        setControlsVisible(false);
+      }
+    }, 350);
+  }
+  container.addEventListener("mouseenter", showControls);
+  container.addEventListener("mouseleave", hideControlsWithDelay);
+  controls.addEventListener("mouseenter", showControls);
+  controls.addEventListener("mouseleave", hideControlsWithDelay);
+  setControlsVisible(false);
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   initVirtualTrackball
-});
-//# sourceMappingURL=main.js.map
+};
+//# sourceMappingURL=main.mjs.map
