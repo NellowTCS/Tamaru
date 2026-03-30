@@ -1,4 +1,4 @@
-import styles from './styles/styles.css';
+import styles from '../styles/styles.css';
 
 export function initVirtualTrackball(): void {
     if (document.getElementById('vt-widget-container')) return;
