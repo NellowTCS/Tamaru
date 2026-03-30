@@ -1,4 +1,4 @@
-# Tamary
+# Tamaru
 
 A modular, self-contained JavaScript/TypeScript widget for adding a draggable, interactive trackball overlay to any web page or app. Includes built-in CSS and no external dependencies.
 
