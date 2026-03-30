@@ -1,33 +1,55 @@
 {
-  "name": "web-template",
-  "version": "0.1.0",
-  "description": "My typical web dev starter project.",
-  "main": "index.js",
+  "name": "tamaru",
+  "version": "0.1.1",
+  "description": "Sairin, the modern, powerful, and compact reactive engine.",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:single": "cross-env SINGLE_FILE=true npm run build",
-    "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NellowTCS/Web-Template.git"
+    "url": "git+https://github.com/NellowTCS/Tamaru.git"
   },
   "author": "NellowTCS",
-  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/NellowTCS/Web-Template/issues"
+    "url": "https://github.com/NellowTCS/Tamaru/issues"
   },
-  "homepage": "https://github.com/NellowTCS/Web-Template#readme",
-  "dependencies": {
-    "vite": "^7.1.3"
-  },
+  "homepage": "https://github.com/NellowTCS/Tamaru#readme",
   "devDependencies": {
-    "@vite-pwa/assets-generator": "^1.0.1",
-    "cross-env": "^10.1.0",
-    "sharp": "^0.34.4",
-    "vite-plugin-pwa": "^1.0.3",
-    "vite-plugin-singlefile": "^2.3.0"
+    "@types/jest": "^29.5.14",
+    "@types/node": "^25.2.3",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@nisoku/satori": "^0.1.3"
   }
 }

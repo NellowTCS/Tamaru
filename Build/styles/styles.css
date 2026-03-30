@@ -1,25 +1,153 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    line-height: 1.6;
+#vt-widget-container {
+    position: fixed;
+    z-index: 999999;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), width 0.3s ease, height 0.3s ease;
 }
 
-button {
-    background: #2196f3;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 4px;
+#vt-widget-container.is-dragging {
+    transition: width 0.3s ease, height 0.3s ease !important;
+}
+
+#vt-controls {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 0px) scale(0.8);
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 20;
+}
+
+#vt-widget-container:hover #vt-controls,
+#vt-widget-container.vt-mini #vt-controls {
+    opacity: 1;
+    transform: translate(-50%, -36px) scale(1);
+    pointer-events: auto;
+}
+
+.vt-btn {
+    width: 30px;
+    height: 30px;
+    background: #1e293b;
+    color: #fff;
+    border: 1px solid #475569;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-button:hover {
-    background: #1976d2;
+#vt-drag-handle {
+    cursor: grab;
 }
 
-.square {
-  width: 100px;
-  height: 100px;
-  background-color: blue;
+#vt-drag-handle:active {
+    cursor: grabbing;
+}
+
+#vt-trackball-area {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.1), inset 0 -2px 5px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#vt-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    z-index: 10;
+    cursor: grab;
+    touch-action: none;
+}
+
+#vt-viewport:active {
+    cursor: grabbing;
+}
+
+#vt-sphere {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #0b3d6e;
+}
+
+#vt-texture {
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    right: -50px;
+    bottom: -50px;
+    background-color: #1e5ba3;
+    /* I know inline SVG bad but i want to bundle everything in one file 
+    and this is the only way to do it without adding extra files 
+    or like vite shenanigans */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+    background-size: 150px 150px;
+    background-position: 0px 0px;
+    transition: background-position 0.1s linear;
+}
+
+#vt-shading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle at 30px 30px, rgba(255, 255, 255, 0.5) 0%, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
+    box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.9), inset 0 0 10px rgba(0, 0, 0, 0.5), inset 5px 5px 10px rgba(255, 255, 255, 0.2);
+}
+
+#vt-widget-container.vt-mini {
+    width: 48px;
+    height: 48px;
+}
+
+#vt-widget-container.vt-mini #vt-trackball-area {
+    width: 48px;
+    height: 48px;
+    cursor: pointer;
+}
+
+#vt-widget-container.vt-mini #vt-sphere,
+#vt-widget-container.vt-mini #vt-viewport {
+    display: none;
+}
+
+#vt-mini-icon {
+    display: none;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle at 30% 30%, #5cabff, #0b3d6e);
+    border-radius: 50%;
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#vt-widget-container.vt-mini #vt-mini-icon {
+    display: block;
 }
