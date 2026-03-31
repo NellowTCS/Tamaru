@@ -5,6 +5,8 @@ interface TamaruConfig {
     haptics?: boolean;
     theme?: TamaruTheme;
     scrollMode?: TamaruScrollMode;
+    scrollFallback?: 'document' | 'none' | 'container';
+    scrollFallbackContainer?: string;
     friction?: number;
     sensitivity?: number;
     snapDistance?: number;

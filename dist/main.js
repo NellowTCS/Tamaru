@@ -214,8 +214,8 @@ function injectStyleTag(styles) {
 }
 
 // src/trackball.ts
-function applyMovement(state, dx, dy, scrollCallback, updateTexture2) {
-  const scrollSensitivity = 1.8;
+function applyMovement(state, dx, dy, scrollCallback, updateTexture2, sensitivity = 1.8) {
+  const scrollSensitivity = sensitivity;
   scrollCallback(-dx * scrollSensitivity, -dy * scrollSensitivity);
   state.texPosX += dx * 1.5;
   state.texPosY += dy * 1.5;
@@ -254,6 +254,8 @@ var DEFAULT_CONFIG = {
   haptics: false,
   theme: "default",
   scrollMode: "page",
+  scrollFallback: "document",
+  scrollFallbackContainer: "",
   friction: 0.92,
   sensitivity: 1.8,
   snapDistance: 80,
@@ -338,14 +340,16 @@ function updateTexture(texture, x, y) {
 }
 
 // src/scrollEngine.ts
-function doSnapToEdge(container, currentLeft, currentTop, feedback2) {
+function doSnapToEdge(container, currentLeft, currentTop, feedback2, snapDistance) {
   const rect = container.getBoundingClientRect();
   const pos = snapToEdge(
     currentLeft,
     currentTop,
     rect,
     window.innerWidth,
-    window.innerHeight
+    window.innerHeight,
+    24,
+    typeof snapDistance === "number" ? snapDistance : void 0
   );
   container.style.left = pos.left + "px";
   container.style.top = pos.top + "px";
@@ -368,31 +372,39 @@ function findNearestScrollable(el) {
   }
   return null;
 }
-function doScroll(dx, dy, mode, target) {
-  const scrollable = findNearestScrollable(target);
+function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallbackContainer) {
+  const nearest = findNearestScrollable(target);
+  let scrollable = nearest;
+  if (!scrollable) {
+    if (scrollFallback === "container" && scrollFallbackContainer) {
+      const el = document.querySelector(scrollFallbackContainer);
+      if (el) scrollable = el;
+    } else if (scrollFallback === "document") {
+      scrollable = document.scrollingElement || document.documentElement;
+    } else {
+      scrollable = null;
+    }
+  }
+  if (!scrollable) return;
   switch (mode) {
     case "page":
-      window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      if (scrollable === document.documentElement || scrollable === document.body) {
+        window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      } else {
+        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      }
       break;
     case "nearest":
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
       break;
     case "horizontal":
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: 0, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: 0, behavior: "auto" });
       break;
     case "momentum":
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx * 2, top: dy * 2, behavior: "smooth" });
-      }
+      scrollable.scrollBy({ left: dx * 2, top: dy * 2, behavior: "smooth" });
       break;
     default:
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
   }
 }
 
@@ -421,9 +433,61 @@ function hideControlsWithDelay(container, controls, controlsHideTimeout, setCont
   }, 350);
 }
 
+// node_modules/tactus/dist/index.mjs
+var HAPTIC_ID = "___haptic-switch___";
+var HAPTIC_DURATION_MS = 10;
+function isIOS$1() {
+  if (typeof navigator === "undefined" || typeof window === "undefined") {
+    return false;
+  }
+  const iOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return iOSDevice || iPadOS;
+}
+var inputElement = null;
+var labelElement = null;
+var isIOS = false;
+function mount() {
+  if (labelElement && inputElement) return;
+  isIOS = isIOS$1();
+  inputElement = document.querySelector(`#${HAPTIC_ID}`);
+  labelElement = document.querySelector(
+    `label[for="${HAPTIC_ID}"]`
+  );
+  if (inputElement && labelElement) return;
+  inputElement = document.createElement("input");
+  inputElement.type = "checkbox";
+  inputElement.id = HAPTIC_ID;
+  inputElement.setAttribute("switch", "");
+  inputElement.style.display = "none";
+  document.body.appendChild(inputElement);
+  labelElement = document.createElement("label");
+  labelElement.htmlFor = HAPTIC_ID;
+  labelElement.style.display = "none";
+  document.body.appendChild(labelElement);
+}
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mount, {
+      once: true
+    });
+  } else {
+    mount();
+  }
+}
+function triggerHaptic(duration = HAPTIC_DURATION_MS) {
+  if (typeof window === "undefined") return;
+  if (isIOS) {
+    if (!inputElement || !labelElement) mount();
+    labelElement?.click();
+  } else {
+    if (navigator?.vibrate) navigator.vibrate(duration);
+    else labelElement?.click();
+  }
+}
+
 // src/hapticEngine.ts
-var import_tactus = require("tactus");
-function triggerHaptic(event) {
+function triggerHaptic2(event) {
   const patterns = {
     grab: 40,
     release: 25,
@@ -432,8 +496,8 @@ function triggerHaptic(event) {
     stop: 30
   };
   const p = patterns[event];
-  if (typeof p === "number") (0, import_tactus.triggerHaptic)(p);
-  else (0, import_tactus.triggerHaptic)(p[0]);
+  if (typeof p === "number") triggerHaptic(p);
+  else triggerHaptic(p[0]);
 }
 
 // src/sound.ts
@@ -441,7 +505,7 @@ function playSound(event) {
 }
 function feedback(event, config) {
   if (config.sound) playSound(event);
-  if (config.haptics) triggerHaptic(event);
+  if (config.haptics) triggerHaptic2(event);
 }
 
 // src/physicsEngine.ts
@@ -455,8 +519,16 @@ function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovem
           state,
           dx,
           dy,
-          (dx2, dy2) => doScroll(dx2, dy2, config.scrollMode, container),
-          updateTexture2
+          (dx2, dy2) => doScroll(
+            dx2,
+            dy2,
+            config.scrollMode,
+            container,
+            config.scrollFallback,
+            config.scrollFallbackContainer
+          ),
+          updateTexture2,
+          config.sensitivity
         )
       );
       const stopped = state.velX === 0 && state.velY === 0;
@@ -480,10 +552,7 @@ function applyThemeVars(vars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
     if (key === "name" || key === "author" || key === "desc") return;
-    root.style.setProperty(
-      `--vt-${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`,
-      value
-    );
+    root.style.setProperty(`--vt-${key}`, value);
   });
 }
 function initVirtualTrackball(config) {
@@ -526,7 +595,8 @@ function initVirtualTrackball(config) {
       container,
       currentLeft,
       currentTop,
-      (ev) => feedback(ev, tamaruConfig)
+      (ev) => feedback(ev, tamaruConfig),
+      tamaruConfig.snapDistance
     );
     currentLeft = pos.left;
     currentTop = pos.top;
@@ -544,8 +614,22 @@ function initVirtualTrackball(config) {
     "#vt-trackball-area"
   );
   toggleBtn.addEventListener("click", () => {
+    const isMini = !container.classList.contains("vt-mini");
     container.classList.toggle("vt-mini");
     toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
+    const size = tamaruConfig ? tamaruConfig.size : 120;
+    if (isMini) {
+      const miniSize = Math.max(40, Math.round(size * 0.4));
+      container.style.width = miniSize + "px";
+      container.style.height = miniSize + "px";
+      trackballArea.style.width = miniSize + "px";
+      trackballArea.style.height = miniSize + "px";
+    } else {
+      container.style.width = size + "px";
+      container.style.height = size + "px";
+      trackballArea.style.width = size + "px";
+      trackballArea.style.height = size + "px";
+    }
     snapToEdgeHandler();
   });
   trackballArea.addEventListener("click", () => {
@@ -585,8 +669,16 @@ function initVirtualTrackball(config) {
       state,
       dx,
       dy,
-      (dx2, dy2) => doScroll(dx2, dy2, tamaruConfig.scrollMode, container),
-      updateTextureHandler
+      (dx2, dy2) => doScroll(
+        dx2,
+        dy2,
+        tamaruConfig.scrollMode,
+        container,
+        tamaruConfig.scrollFallback,
+        tamaruConfig.scrollFallbackContainer
+      ),
+      updateTextureHandler,
+      tamaruConfig.sensitivity
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
@@ -661,22 +753,36 @@ function updateVirtualTrackballConfig(newConfig) {
     applyThemeVars(themeVars);
   }
   if (tamaruState) {
-    if (typeof newConfig.friction === "number") tamaruState.friction = tamaruConfig.friction;
+    if (typeof newConfig.friction === "number")
+      tamaruState.friction = tamaruConfig.friction;
   }
   if (typeof newConfig.size === "number") {
     const size = tamaruConfig.size;
     tamaruContainer.style.width = size + "px";
     tamaruContainer.style.height = size + "px";
-    const trackballArea = tamaruContainer.querySelector("#vt-trackball-area");
+    const trackballArea = tamaruContainer.querySelector(
+      "#vt-trackball-area"
+    );
     if (trackballArea) {
       trackballArea.style.width = size + "px";
       trackballArea.style.height = size + "px";
     }
-    const sphere = tamaruContainer.querySelector("#vt-sphere");
+    const sphere = tamaruContainer.querySelector(
+      "#vt-sphere"
+    );
     if (sphere) {
       const inner = Math.max(0, size - 20);
       sphere.style.width = inner + "px";
       sphere.style.height = inner + "px";
+    }
+    if (tamaruContainer.classList.contains("vt-mini")) {
+      const miniSize = Math.max(40, Math.round(size * 0.4));
+      tamaruContainer.style.width = miniSize + "px";
+      tamaruContainer.style.height = miniSize + "px";
+      if (trackballArea) {
+        trackballArea.style.width = miniSize + "px";
+        trackballArea.style.height = miniSize + "px";
+      }
     }
   }
 }
