@@ -1,0 +1,11 @@
+{
+  "name": "Glossy",
+  "author": "NellowTCS",
+  "desc": "Glossy light theme.",
+  "sphereColor": "#e0e0e0",
+  "textureColor": "#bdbdbd",
+  "shadingLight": "rgba(255,255,255,0.8)",
+  "shadingDark": "rgba(0,0,0,0.5)",
+  "glow": "#ffffff",
+  "miniIcon": "#ffffff"
+}

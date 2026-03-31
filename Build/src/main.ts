@@ -6,9 +6,31 @@ import {
   updatePhysics,
   snapToEdge,
 } from "./trackball";
+import { TamaruConfig, DEFAULT_CONFIG } from "./types";
+import { themes } from "./themeLoader";
+import { findNearestScrollable, doScroll } from "./scrollUtil";
+import { playSound } from "./sound";
+import { triggerHaptic } from "./haptics";
 
-export function initVirtualTrackball(): void {
+type ThemeVars = (typeof themes)["default"];
+
+function applyThemeVars(vars: ThemeVars) {
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([key, value]) => {
+    if (key === "name" || key === "author" || key === "desc") return;
+    root.style.setProperty(
+      `--vt-${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`,
+      value as string,
+    );
+  });
+}
+
+export function initVirtualTrackball(config?: TamaruConfig): void {
   if (document.getElementById("vt-widget-container")) return;
+  const merged = { ...DEFAULT_CONFIG, ...config };
+  // Apply theme
+  const themeVars = themes[merged.theme] || themes["default"];
+  applyThemeVars(themeVars);
   injectStyleTag(styles as unknown as string);
   const container = createWidgetContainer();
   document.body.appendChild(container);
@@ -34,6 +56,7 @@ export function initVirtualTrackball(): void {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
+    feedback("grab");
   });
 
   dragHandle.addEventListener("pointermove", (e: PointerEvent) => {
@@ -57,6 +80,8 @@ export function initVirtualTrackball(): void {
     currentTop = pos.top;
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
+    doSnapToEdge();
+    feedback("snap");
   }
 
   dragHandle.addEventListener("pointerup", (e: PointerEvent) => {
@@ -64,6 +89,7 @@ export function initVirtualTrackball(): void {
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
     doSnapToEdge();
+    feedback("release");
   });
 
   window.addEventListener("resize", doSnapToEdge);
@@ -119,9 +145,10 @@ export function initVirtualTrackball(): void {
     const dy = e.clientY - tbPrevMouseY;
     state.velX = dx;
     state.velY = dy;
-    applyMovement(state, dx, dy, window.scrollBy.bind(window), updateTexture);
+    applyMovement(state, dx, dy, (dx, dy) => doScroll(dx, dy, merged.scrollMode, container), updateTexture);
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin");
   });
 
   viewport.addEventListener("pointerup", (e: PointerEvent) => {
@@ -144,27 +171,22 @@ export function initVirtualTrackball(): void {
   function physicsLoop(): void {
     if (!isTrackballDragging) {
       updatePhysics(state, (dx, dy) =>
-        applyMovement(
-          state,
-          dx,
-          dy,
-          window.scrollBy.bind(window),
-          updateTexture,
-        ),
+        applyMovement(state, dx, dy, (dx, dy) => doScroll(dx, dy, merged.scrollMode, container), updateTexture),
       );
+      if (state.velX === 0 && state.velY === 0) feedback("stop");
     }
     requestAnimationFrame(physicsLoop);
   }
   requestAnimationFrame(physicsLoop);
 
-  const controls = container.querySelector('#vt-controls') as HTMLElement;
+  const controls = container.querySelector("#vt-controls") as HTMLElement;
   let controlsHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function setControlsVisible(visible: boolean) {
     if (visible) {
-      controls.classList.add('vt-controls-visible');
+      controls.classList.add("vt-controls-visible");
     } else {
-      controls.classList.remove('vt-controls-visible');
+      controls.classList.remove("vt-controls-visible");
     }
   }
 
@@ -180,17 +202,23 @@ export function initVirtualTrackball(): void {
     if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
     controlsHideTimeout = setTimeout(() => {
       // Only hide if neither container nor controls are hovered
-      if (!container.matches(':hover') && !controls.matches(':hover')) {
+      if (!container.matches(":hover") && !controls.matches(":hover")) {
         setControlsVisible(false);
       }
     }, 350);
   }
 
-  container.addEventListener('mouseenter', showControls);
-  container.addEventListener('mouseleave', hideControlsWithDelay);
-  controls.addEventListener('mouseenter', showControls);
-  controls.addEventListener('mouseleave', hideControlsWithDelay);
+  container.addEventListener("mouseenter", showControls);
+  container.addEventListener("mouseleave", hideControlsWithDelay);
+  controls.addEventListener("mouseenter", showControls);
+  controls.addEventListener("mouseleave", hideControlsWithDelay);
 
   // Hide controls initially
   setControlsVisible(false);
+
+  // Helper to trigger sound/haptic if enabled
+  function feedback(event: "grab" | "release" | "snap" | "spin" | "stop") {
+    if (merged.sound) playSound(event);
+    if (merged.haptics) triggerHaptic(event);
+  }
 }

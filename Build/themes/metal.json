@@ -1,0 +1,11 @@
+{
+  "name": "Metal",
+  "author": "NellowTCS",
+  "desc": "Metallic gray theme.",
+  "sphereColor": "#757575",
+  "textureColor": "#b0b0b0",
+  "shadingLight": "rgba(255,255,255,0.7)",
+  "shadingDark": "rgba(0,0,0,0.7)",
+  "glow": "#e0e0e0",
+  "miniIcon": "#e0e0e0"
+}

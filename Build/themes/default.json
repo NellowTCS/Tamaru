@@ -1,0 +1,11 @@
+{
+  "name": "Default",
+  "author": "NellowTCS",
+  "desc": "Standard blue theme for Tamaru.",
+  "sphereColor": "#0b3d6e",
+  "textureColor": "#1e5ba3",
+  "shadingLight": "rgba(255,255,255,0.5)",
+  "shadingDark": "rgba(0,0,0,0.8)",
+  "glow": "#5cabff",
+  "miniIcon": "#5cabff"
+}

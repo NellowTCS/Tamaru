@@ -1,0 +1,11 @@
+{
+  "name": "Red",
+  "author": "NellowTCS",
+  "desc": "Red accent theme.",
+  "sphereColor": "#b91c1c",
+  "textureColor": "#f87171",
+  "shadingLight": "rgba(255,255,255,0.5)",
+  "shadingDark": "rgba(0,0,0,0.8)",
+  "glow": "#ffb4b4",
+  "miniIcon": "#ffb4b4"
+}

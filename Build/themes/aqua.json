@@ -1,0 +1,11 @@
+{
+  "name": "Aqua",
+  "author": "NellowTCS",
+  "desc": "Aqua (macOS-like) theme.",
+  "sphereColor": "#1ca9e6",
+  "textureColor": "#5fd0ff",
+  "shadingLight": "rgba(255,255,255,0.6)",
+  "shadingDark": "rgba(0,0,0,0.7)",
+  "glow": "#aefbff",
+  "miniIcon": "#aefbff"
+}
