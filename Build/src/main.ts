@@ -80,7 +80,6 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     currentTop = pos.top;
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
-    doSnapToEdge();
     feedback("snap");
   }
 
@@ -168,12 +167,17 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     { passive: false },
   );
 
+  let wasStopped = true;
   function physicsLoop(): void {
     if (!isTrackballDragging) {
       updatePhysics(state, (dx, dy) =>
         applyMovement(state, dx, dy, (dx, dy) => doScroll(dx, dy, merged.scrollMode, container), updateTexture),
       );
-      if (state.velX === 0 && state.velY === 0) feedback("stop");
+      const stopped = state.velX === 0 && state.velY === 0;
+      if (stopped && !wasStopped) {
+        feedback("stop");
+      }
+      wasStopped = stopped;
     }
     requestAnimationFrame(physicsLoop);
   }
