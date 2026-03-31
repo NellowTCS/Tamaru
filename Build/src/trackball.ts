@@ -12,8 +12,9 @@ export function applyMovement(
   dy: number,
   scrollCallback: (dx: number, dy: number) => void,
   updateTexture: (x: number, y: number) => void,
+  sensitivity = 1.8,
 ): void {
-  const scrollSensitivity = 1.8;
+  const scrollSensitivity = sensitivity;
   scrollCallback(-dx * scrollSensitivity, -dy * scrollSensitivity);
   state.texPosX += dx * 1.5;
   state.texPosY += dy * 1.5;

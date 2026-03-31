@@ -6,6 +6,7 @@ export function doSnapToEdge(
   currentLeft: number,
   currentTop: number,
   feedback: (event: "snap") => void,
+  snapDistance?: number,
 ): { left: number; top: number } {
   const rect = container.getBoundingClientRect();
   const pos = snapToEdge(
@@ -14,6 +15,8 @@ export function doSnapToEdge(
     rect,
     window.innerWidth,
     window.innerHeight,
+    24,
+    typeof snapDistance === 'number' ? snapDistance : undefined,
   );
   container.style.left = pos.left + "px";
   container.style.top = pos.top + "px";
@@ -49,37 +52,51 @@ export function doScroll(
   dy: number,
   mode: TamaruScrollMode,
   target: HTMLElement,
+  scrollFallback: 'document' | 'none' | 'container' = 'document',
+  scrollFallbackContainer?: string,
 ): void {
-  const scrollable = findNearestScrollable(target);
+  // Find nearest scrollable ancestor
+  const nearest = findNearestScrollable(target);
+
+  // Resolve effective element to scroll based on fallback policy
+  let scrollable: HTMLElement | null = nearest;
+
+  if (!scrollable) {
+    if (scrollFallback === 'container' && scrollFallbackContainer) {
+      const el = document.querySelector(scrollFallbackContainer) as HTMLElement | null;
+      if (el) scrollable = el;
+    } else if (scrollFallback === 'document') {
+      scrollable = (document.scrollingElement as HTMLElement) || document.documentElement as HTMLElement;
+    } else {
+      scrollable = null; // 'none' -> do nothing
+    }
+  }
+
+  if (!scrollable) return; // nothing to scroll per policy
 
   switch (mode) {
     case "page":
-      // Always scroll the window
-      window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      // Prefer window scrolling for page mode when scrolling document
+      if (scrollable === document.documentElement || scrollable === document.body) {
+        window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      } else {
+        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      }
       break;
 
     case "nearest":
-      // Scroll the nearest scrollable ancestor
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
       break;
 
     case "horizontal":
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: 0, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: 0, behavior: "auto" });
       break;
 
     case "momentum":
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx * 2, top: dy * 2, behavior: "smooth" });
-      }
+      scrollable.scrollBy({ left: dx * 2, top: dy * 2, behavior: "smooth" });
       break;
 
     default:
-      if (scrollable) {
-        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
-      }
+      scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
   }
 }

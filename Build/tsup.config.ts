@@ -9,5 +9,7 @@ export default defineConfig({
   clean: true,
   loader: {
     '.css': 'text'
-  }
+  },
+  // Bundle all packages (regex matches everything)
+  noExternal: [/.*/],
 });

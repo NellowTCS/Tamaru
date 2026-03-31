@@ -29,10 +29,7 @@ function applyThemeVars(vars: ThemeVars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
     if (key === "name" || key === "author" || key === "desc") return;
-    root.style.setProperty(
-      `--vt-${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`,
-      value as string,
-    );
+    root.style.setProperty(`--vt-${key}`, value as string);
   });
 }
 
@@ -82,6 +79,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   const snapToEdgeHandler = () => {
     const pos = doSnapToEdge(container, currentLeft, currentTop, (ev: "snap") =>
       feedback(ev, tamaruConfig!),
+      tamaruConfig!.snapDistance,
     );
     currentLeft = pos.left;
     currentTop = pos.top;
@@ -103,8 +101,25 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   ) as HTMLElement;
 
   toggleBtn.addEventListener("click", () => {
+    const isMini = !container.classList.contains("vt-mini");
     container.classList.toggle("vt-mini");
     toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
+    // compute sizes based on config
+    const size = tamaruConfig ? tamaruConfig.size : 120;
+    if (isMini) {
+      // switch to mini: compute mini size as 40% of configured size, min 40px
+      const miniSize = Math.max(40, Math.round(size * 0.4));
+      container.style.width = miniSize + "px";
+      container.style.height = miniSize + "px";
+      trackballArea.style.width = miniSize + "px";
+      trackballArea.style.height = miniSize + "px";
+    } else {
+      // restore full size
+      container.style.width = size + "px";
+      container.style.height = size + "px";
+      trackballArea.style.width = size + "px";
+      trackballArea.style.height = size + "px";
+    }
     snapToEdgeHandler();
   });
 
@@ -151,8 +166,16 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
       state,
       dx,
       dy,
-      (dx, dy) => doScroll(dx, dy, tamaruConfig!.scrollMode, container),
+      (dx, dy) => doScroll(
+        dx,
+        dy,
+        tamaruConfig!.scrollMode,
+        container,
+        tamaruConfig!.scrollFallback,
+        tamaruConfig!.scrollFallbackContainer,
+      ),
       updateTextureHandler,
+      tamaruConfig!.sensitivity,
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
@@ -229,7 +252,9 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
 }
 
 // Update config at runtime
-export function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): void {
+export function updateVirtualTrackballConfig(
+  newConfig: Partial<TamaruConfig>,
+): void {
   if (!tamaruContainer || !tamaruConfig) return;
   Object.assign(tamaruConfig, newConfig);
 
@@ -241,7 +266,8 @@ export function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): 
 
   // Update state-driven values
   if (tamaruState) {
-    if (typeof newConfig.friction === "number") tamaruState.friction = tamaruConfig.friction;
+    if (typeof newConfig.friction === "number")
+      tamaruState.friction = tamaruConfig.friction;
   }
 
   // Update container size if changed
@@ -249,16 +275,30 @@ export function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): 
     const size = tamaruConfig.size;
     tamaruContainer.style.width = size + "px";
     tamaruContainer.style.height = size + "px";
-    const trackballArea = tamaruContainer.querySelector("#vt-trackball-area") as HTMLElement | null;
+    const trackballArea = tamaruContainer.querySelector(
+      "#vt-trackball-area",
+    ) as HTMLElement | null;
     if (trackballArea) {
       trackballArea.style.width = size + "px";
       trackballArea.style.height = size + "px";
     }
-    const sphere = tamaruContainer.querySelector("#vt-sphere") as HTMLElement | null;
+    const sphere = tamaruContainer.querySelector(
+      "#vt-sphere",
+    ) as HTMLElement | null;
     if (sphere) {
       const inner = Math.max(0, size - 20);
       sphere.style.width = inner + "px";
       sphere.style.height = inner + "px";
+    }
+    // If widget currently in mini mode, adjust mini sizing to remain proportional
+    if (tamaruContainer.classList.contains('vt-mini')) {
+      const miniSize = Math.max(40, Math.round(size * 0.4));
+      tamaruContainer.style.width = miniSize + 'px';
+      tamaruContainer.style.height = miniSize + 'px';
+      if (trackballArea) {
+        trackballArea.style.width = miniSize + 'px';
+        trackballArea.style.height = miniSize + 'px';
+      }
     }
   }
 }

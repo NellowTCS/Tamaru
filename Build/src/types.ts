@@ -8,6 +8,13 @@ export interface TamaruConfig {
   haptics?: boolean;
   theme?: TamaruTheme;
   scrollMode?: TamaruScrollMode;
+  // How to behave when no nearest scrollable ancestor is found
+  // 'document' -> fall back to document scrolling (default)
+  // 'none' -> do nothing when no ancestor found
+  // 'container' -> use a user-specified selector in `scrollFallbackContainer`
+  scrollFallback?: 'document' | 'none' | 'container';
+  // Optional selector string used when scrollFallback === 'container'
+  scrollFallbackContainer?: string;
   friction?: number;
   sensitivity?: number;
   snapDistance?: number;
@@ -19,6 +26,8 @@ export const DEFAULT_CONFIG: Required<TamaruConfig> = {
   haptics: false,
   theme: "default",
   scrollMode: "page",
+  scrollFallback: 'document',
+  scrollFallbackContainer: '',
   friction: 0.92,
   sensitivity: 1.8,
   snapDistance: 80,

@@ -20,8 +20,16 @@ export function createPhysicsLoop(
           dx,
           dy,
           (dx: number, dy: number) =>
-            doScroll(dx, dy, config.scrollMode, container),
+            doScroll(
+              dx,
+              dy,
+              config.scrollMode,
+              container,
+              config.scrollFallback,
+              config.scrollFallbackContainer,
+            ),
           updateTexture,
+          config.sensitivity,
         ),
       );
       const stopped = state.velX === 0 && state.velY === 0;
