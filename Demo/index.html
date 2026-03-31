@@ -202,7 +202,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
       size: 120,
     };
 
-    function $(id){return document.getElementById(id);}
+    function $(id){ return document.getElementById(id); }
 
     function readAndApply() {
       const cfg = {
@@ -220,35 +220,28 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
       updateVirtualTrackballConfig(cfg);
     }
 
-    // wire inputs
-    window.addEventListener('DOMContentLoaded', () => {
-      // init control defaults
-      $('cfg-sound').checked = DEFAULTS.sound;
-      $('cfg-haptics').checked = DEFAULTS.haptics;
-      $('cfg-theme').value = DEFAULTS.theme;
-      $('cfg-scroll').value = DEFAULTS.scrollMode;
-      $('cfg-friction').value = DEFAULTS.friction;
-      $('cfg-sensitivity').value = DEFAULTS.sensitivity;
-      $('cfg-snap').value = DEFAULTS.snapDistance;
-      $('cfg-size').value = DEFAULTS.size;
-      $('cfg-fallback').value = DEFAULTS.scrollFallback;
-      $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
+    // init control defaults
+    $('cfg-sound').checked = DEFAULTS.sound;
+    $('cfg-haptics').checked = DEFAULTS.haptics;
+    $('cfg-theme').value = DEFAULTS.theme;
+    $('cfg-scroll').value = DEFAULTS.scrollMode;
+    $('cfg-friction').value = DEFAULTS.friction;
+    $('cfg-sensitivity').value = DEFAULTS.sensitivity;
+    $('cfg-snap').value = DEFAULTS.snapDistance;
+    $('cfg-size').value = DEFAULTS.size;
+    $('cfg-fallback').value = DEFAULTS.scrollFallback;
+    $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
 
-      // attach change listeners
-      ['cfg-sound','cfg-haptics','cfg-theme','cfg-scroll','cfg-friction','cfg-sensitivity','cfg-snap','cfg-size','cfg-fallback','cfg-fallback-selector']
-        .forEach(id => $(id).addEventListener('input', () => readAndApply()));
+    // attach change listeners
+    ['cfg-sound','cfg-haptics','cfg-theme','cfg-scroll','cfg-friction','cfg-sensitivity','cfg-snap','cfg-size','cfg-fallback','cfg-fallback-selector']
+      .forEach(id => $(id).addEventListener('input', () => readAndApply()));
 
-      // init/destroy
-      $('cfg-init').addEventListener('click', ()=> initVirtualTrackball());
-      $('cfg-destroy').addEventListener('click', ()=> destroyVirtualTrackball());
+    // init/destroy buttons
+    $('cfg-init').addEventListener('click', ()=> initVirtualTrackball());
+    $('cfg-destroy').addEventListener('click', ()=> destroyVirtualTrackball());
 
-      // ensure scroll area top
-      const scrollArea = document.querySelector('.scroll-area');
-      if (scrollArea) scrollArea.scrollTop = 0;
-
-      // auto-init on load
-      initVirtualTrackball();
-    });
+    // auto-init on load
+    initVirtualTrackball();
   </script>
 </body>
 </html>
