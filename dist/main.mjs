@@ -92,7 +92,7 @@ var styles_default = `#vt-widget-container {
     height: 100px;
     border-radius: 50%;
     overflow: hidden;
-    background-color: #0b3d6e;
+    background-color: var(--vt-sphereColor);
 }
 
 #vt-texture {
@@ -101,7 +101,7 @@ var styles_default = `#vt-widget-container {
     left: -50px;
     right: -50px;
     bottom: -50px;
-    background-color: #1e5ba3;
+    background-color: var(--vt-textureColor);
     /* I know inline SVG bad but i want to bundle everything in one file 
     and this is the only way to do it without adding extra files 
     or like vite shenanigans */
@@ -119,8 +119,8 @@ var styles_default = `#vt-widget-container {
     height: 100%;
     border-radius: 50%;
     pointer-events: none;
-    background: radial-gradient(circle at 30px 30px, rgba(255, 255, 255, 0.5) 0%, transparent 50%, rgba(0, 0, 0, 0.8) 100%);
-    box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.9), inset 0 0 10px rgba(0, 0, 0, 0.5), inset 5px 5px 10px rgba(255, 255, 255, 0.2);
+    background: radial-gradient(circle at 30px 30px, var(--vt-shadingLight) 0%, transparent 50%, var(--vt-shadingDark) 100%);
+    box-shadow: inset -10px -10px 20px var(--vt-shadingDark), inset 0 0 10px var(--vt-shadingDark), inset 5px 5px 10px var(--vt-shadingLight);
 }
 
 #vt-widget-container.vt-mini {
@@ -143,9 +143,9 @@ var styles_default = `#vt-widget-container {
     display: none;
     width: 20px;
     height: 20px;
-    background: radial-gradient(circle at 30% 30%, #5cabff, #0b3d6e);
+    background: radial-gradient(circle at 30% 30%, var(--vt-miniIcon), var(--vt-sphereColor));
     border-radius: 50%;
-    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 8px var(--vt-glow), inset -2px -2px 4px rgba(0, 0, 0, 0.5);
 }
 
 #vt-widget-container.vt-mini #vt-mini-icon {
@@ -413,7 +413,6 @@ function initVirtualTrackball(config) {
     currentTop = pos.top;
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
-    doSnapToEdge();
     feedback("snap");
   }
   dragHandle.addEventListener("pointerup", (e) => {
@@ -488,13 +487,18 @@ function initVirtualTrackball(config) {
     },
     { passive: false }
   );
+  let wasStopped = true;
   function physicsLoop() {
     if (!isTrackballDragging) {
       updatePhysics(
         state,
         (dx, dy) => applyMovement(state, dx, dy, (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container), updateTexture)
       );
-      if (state.velX === 0 && state.velY === 0) feedback("stop");
+      const stopped = state.velX === 0 && state.velY === 0;
+      if (stopped && !wasStopped) {
+        feedback("stop");
+      }
+      wasStopped = stopped;
     }
     requestAnimationFrame(physicsLoop);
   }
