@@ -13,3 +13,7 @@ export const themes = {
 };
 
 export type ThemeName = keyof typeof themes;
+
+export function updateTexture(texture: HTMLElement, x: number, y: number) {
+  texture.style.backgroundPosition = `${x}px ${y}px`;
+}

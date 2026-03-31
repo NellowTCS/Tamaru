@@ -1,4 +1,25 @@
 import { TamaruScrollMode } from "./types";
+import { snapToEdge } from "./trackball";
+
+export function doSnapToEdge(
+  container: HTMLElement,
+  currentLeft: number,
+  currentTop: number,
+  feedback: (event: "snap") => void,
+): { left: number; top: number } {
+  const rect = container.getBoundingClientRect();
+  const pos = snapToEdge(
+    currentLeft,
+    currentTop,
+    rect,
+    window.innerWidth,
+    window.innerHeight,
+  );
+  container.style.left = pos.left + "px";
+  container.style.top = pos.top + "px";
+  feedback("snap");
+  return pos;
+}
 
 export function findNearestScrollable(el: HTMLElement): HTMLElement | null {
   let node: HTMLElement | null = el;
@@ -27,7 +48,7 @@ export function doScroll(
   dx: number,
   dy: number,
   mode: TamaruScrollMode,
-  target: HTMLElement
+  target: HTMLElement,
 ): void {
   const scrollable = findNearestScrollable(target);
 

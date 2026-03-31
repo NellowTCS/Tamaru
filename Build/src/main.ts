@@ -1,5 +1,5 @@
 import styles from "../styles/styles.css";
-import { createWidgetContainer, injectStyleTag } from "./dom";
+import { createWidgetContainer, injectStyleTag } from "./domManager";
 import {
   TrackballState,
   applyMovement,
@@ -7,12 +7,21 @@ import {
   snapToEdge,
 } from "./trackball";
 import { TamaruConfig, DEFAULT_CONFIG } from "./types";
-import { themes } from "./themeLoader";
-import { findNearestScrollable, doScroll } from "./scrollUtil";
-import { playSound } from "./sound";
-import { triggerHaptic } from "./haptics";
+import { themes, updateTexture } from "./themeLoader";
+import { findNearestScrollable, doSnapToEdge, doScroll } from "./scrollEngine";
+import {
+  setControlsVisible,
+  showControls,
+  hideControlsWithDelay,
+} from "./controlsManager";
+import { feedback } from "./sound";
+import { createPhysicsLoop } from "./physicsEngine";
 
 type ThemeVars = (typeof themes)["default"];
+
+let tamaruContainer: HTMLElement | null = null;
+let tamaruAnimationFrame: number | null = null;
+let tamaruPaused = false;
 
 function applyThemeVars(vars: ThemeVars) {
   const root = document.documentElement;
@@ -26,7 +35,7 @@ function applyThemeVars(vars: ThemeVars) {
 }
 
 export function initVirtualTrackball(config?: TamaruConfig): void {
-  if (document.getElementById("vt-widget-container")) return;
+  if (tamaruContainer) return; // already mounted
   const merged = { ...DEFAULT_CONFIG, ...config };
   // Apply theme
   const themeVars = themes[merged.theme] || themes["default"];
@@ -34,6 +43,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   injectStyleTag(styles as unknown as string);
   const container = createWidgetContainer();
   document.body.appendChild(container);
+  tamaruContainer = container;
 
   let currentLeft = window.innerWidth - 120 - 24;
   let currentTop = window.innerHeight - 120 - 24;
@@ -56,7 +66,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
-    feedback("grab");
+    feedback("grab", merged);
   });
 
   dragHandle.addEventListener("pointermove", (e: PointerEvent) => {
@@ -67,31 +77,23 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     container.style.top = currentTop + "px";
   });
 
-  function doSnapToEdge() {
-    const rect = container.getBoundingClientRect();
-    const pos = snapToEdge(
-      currentLeft,
-      currentTop,
-      rect,
-      window.innerWidth,
-      window.innerHeight,
+  const snapToEdgeHandler = () => {
+    const pos = doSnapToEdge(container, currentLeft, currentTop, (ev: "snap") =>
+      feedback(ev, merged),
     );
     currentLeft = pos.left;
     currentTop = pos.top;
-    container.style.left = currentLeft + "px";
-    container.style.top = currentTop + "px";
-    feedback("snap");
-  }
+  };
 
   dragHandle.addEventListener("pointerup", (e: PointerEvent) => {
     isWidgetDragging = false;
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
-    doSnapToEdge();
-    feedback("release");
+    snapToEdgeHandler();
+    feedback("release", merged);
   });
 
-  window.addEventListener("resize", doSnapToEdge);
+  window.addEventListener("resize", snapToEdgeHandler);
 
   const toggleBtn = container.querySelector("#vt-toggle-btn") as HTMLElement;
   const trackballArea = container.querySelector(
@@ -101,14 +103,14 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   toggleBtn.addEventListener("click", () => {
     container.classList.toggle("vt-mini");
     toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
-    doSnapToEdge();
+    snapToEdgeHandler();
   });
 
   trackballArea.addEventListener("click", () => {
     if (container.classList.contains("vt-mini")) {
       container.classList.remove("vt-mini");
       toggleBtn.textContent = "-";
-      doSnapToEdge();
+      snapToEdgeHandler();
     }
   });
 
@@ -125,9 +127,8 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   let tbPrevMouseX = 0,
     tbPrevMouseY = 0;
 
-  function updateTexture(x: number, y: number) {
-    texture.style.backgroundPosition = `${x}px ${y}px`;
-  }
+  const updateTextureHandler = (x: number, y: number) =>
+    updateTexture(texture, x, y);
 
   viewport.addEventListener("pointerdown", (e: PointerEvent) => {
     isTrackballDragging = true;
@@ -144,10 +145,16 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     const dy = e.clientY - tbPrevMouseY;
     state.velX = dx;
     state.velY = dy;
-    applyMovement(state, dx, dy, (dx, dy) => doScroll(dx, dy, merged.scrollMode, container), updateTexture);
+    applyMovement(
+      state,
+      dx,
+      dy,
+      (dx, dy) => doScroll(dx, dy, merged.scrollMode, container),
+      updateTextureHandler,
+    );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin");
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", merged);
   });
 
   viewport.addEventListener("pointerup", (e: PointerEvent) => {
@@ -167,62 +174,84 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     { passive: false },
   );
 
-  let wasStopped = true;
-  function physicsLoop(): void {
-    if (!isTrackballDragging) {
-      updatePhysics(state, (dx, dy) =>
-        applyMovement(state, dx, dy, (dx, dy) => doScroll(dx, dy, merged.scrollMode, container), updateTexture),
-      );
-      const stopped = state.velX === 0 && state.velY === 0;
-      if (stopped && !wasStopped) {
-        feedback("stop");
-      }
-      wasStopped = stopped;
-    }
-    requestAnimationFrame(physicsLoop);
-  }
-  requestAnimationFrame(physicsLoop);
+  const physicsLoop = createPhysicsLoop(
+    state,
+    () => isTrackballDragging,
+    () => tamaruPaused,
+    applyMovement,
+    updateTextureHandler,
+    merged,
+    container,
+    (event: string) => feedback(event as any, merged),
+  );
+  tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
 
   const controls = container.querySelector("#vt-controls") as HTMLElement;
   let controlsHideTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  function setControlsVisible(visible: boolean) {
-    if (visible) {
-      controls.classList.add("vt-controls-visible");
-    } else {
-      controls.classList.remove("vt-controls-visible");
-    }
-  }
-
-  function showControls() {
-    if (controlsHideTimeout) {
-      clearTimeout(controlsHideTimeout);
-      controlsHideTimeout = null;
-    }
-    setControlsVisible(true);
-  }
-
-  function hideControlsWithDelay() {
-    if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
-    controlsHideTimeout = setTimeout(() => {
-      // Only hide if neither container nor controls are hovered
-      if (!container.matches(":hover") && !controls.matches(":hover")) {
-        setControlsVisible(false);
-      }
-    }, 350);
-  }
-
-  container.addEventListener("mouseenter", showControls);
-  container.addEventListener("mouseleave", hideControlsWithDelay);
-  controls.addEventListener("mouseenter", showControls);
-  controls.addEventListener("mouseleave", hideControlsWithDelay);
+  container.addEventListener("mouseenter", () => {
+    controlsHideTimeout = showControls(
+      controls,
+      controlsHideTimeout,
+      setControlsVisible,
+    );
+  });
+  container.addEventListener("mouseleave", () => {
+    controlsHideTimeout = hideControlsWithDelay(
+      container,
+      controls,
+      controlsHideTimeout,
+      setControlsVisible,
+    );
+  });
+  controls.addEventListener("mouseenter", () => {
+    controlsHideTimeout = showControls(
+      controls,
+      controlsHideTimeout,
+      setControlsVisible,
+    );
+  });
+  controls.addEventListener("mouseleave", () => {
+    controlsHideTimeout = hideControlsWithDelay(
+      container,
+      controls,
+      controlsHideTimeout,
+      setControlsVisible,
+    );
+  });
 
   // Hide controls initially
-  setControlsVisible(false);
+  setControlsVisible(controls, false);
+}
 
-  // Helper to trigger sound/haptic if enabled
-  function feedback(event: "grab" | "release" | "snap" | "spin" | "stop") {
-    if (merged.sound) playSound(event);
-    if (merged.haptics) triggerHaptic(event);
+// destroy
+export function destroyVirtualTrackball(): void {
+  if (!tamaruContainer) return;
+  // Stop animation
+  if (tamaruAnimationFrame !== null) {
+    cancelAnimationFrame(tamaruAnimationFrame);
+    tamaruAnimationFrame = null;
   }
+  // Remove DOM
+  tamaruContainer.remove();
+  tamaruContainer = null;
+  const styleTag = document.getElementById("vt-style-tag");
+  if (styleTag) styleTag.remove();
+}
+
+// hide/show
+export function hideVirtualTrackball(): void {
+  if (tamaruContainer) tamaruContainer.style.display = "none";
+}
+
+export function showVirtualTrackball(): void {
+  if (tamaruContainer) tamaruContainer.style.display = "";
+}
+
+// pause/resume
+export function pauseVirtualTrackball(): void {
+  tamaruPaused = true;
+}
+
+export function resumeVirtualTrackball(): void {
+  tamaruPaused = false;
 }
