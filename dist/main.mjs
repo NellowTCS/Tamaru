@@ -762,7 +762,7 @@ function destroyVirtualTrackball() {
   }
   tamaruContainer.remove();
   tamaruContainer = null;
-  const styleTag = document.getElementById("vt-style-tag");
+  const styleTag = document.getElementById("vt-styles");
   if (styleTag) styleTag.remove();
 }
 function hideVirtualTrackball() {
