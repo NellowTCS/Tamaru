@@ -12,10 +12,11 @@ interface TamaruConfig {
 }
 
 declare function initVirtualTrackball(config?: TamaruConfig): void;
+declare function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): void;
 declare function destroyVirtualTrackball(): void;
 declare function hideVirtualTrackball(): void;
 declare function showVirtualTrackball(): void;
 declare function pauseVirtualTrackball(): void;
 declare function resumeVirtualTrackball(): void;
 
-export { destroyVirtualTrackball, hideVirtualTrackball, initVirtualTrackball, pauseVirtualTrackball, resumeVirtualTrackball, showVirtualTrackball };
+export { destroyVirtualTrackball, hideVirtualTrackball, initVirtualTrackball, pauseVirtualTrackball, resumeVirtualTrackball, showVirtualTrackball, updateVirtualTrackballConfig };

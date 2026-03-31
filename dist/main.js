@@ -25,7 +25,8 @@ __export(main_exports, {
   initVirtualTrackball: () => initVirtualTrackball,
   pauseVirtualTrackball: () => pauseVirtualTrackball,
   resumeVirtualTrackball: () => resumeVirtualTrackball,
-  showVirtualTrackball: () => showVirtualTrackball
+  showVirtualTrackball: () => showVirtualTrackball,
+  updateVirtualTrackballConfig: () => updateVirtualTrackballConfig
 });
 module.exports = __toCommonJS(main_exports);
 
@@ -421,7 +422,18 @@ function hideControlsWithDelay(container, controls, controlsHideTimeout, setCont
 }
 
 // src/hapticEngine.ts
+var import_tactus = require("tactus");
 function triggerHaptic(event) {
+  const patterns = {
+    grab: 40,
+    release: 25,
+    snap: 50,
+    spin: 80,
+    stop: 30
+  };
+  const p = patterns[event];
+  if (typeof p === "number") (0, import_tactus.triggerHaptic)(p);
+  else (0, import_tactus.triggerHaptic)(p[0]);
 }
 
 // src/sound.ts
@@ -433,7 +445,7 @@ function feedback(event, config) {
 }
 
 // src/physicsEngine.ts
-function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovement2, updateTexture2, merged, container, feedback2) {
+function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovement2, updateTexture2, config, container, feedback2) {
   let wasStopped = true;
   function physicsLoop() {
     if (!tamaruPaused2() && !isTrackballDragging()) {
@@ -443,7 +455,7 @@ function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovem
           state,
           dx,
           dy,
-          (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container),
+          (dx2, dy2) => doScroll(dx2, dy2, config.scrollMode, container),
           updateTexture2
         )
       );
@@ -462,6 +474,8 @@ function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovem
 var tamaruContainer = null;
 var tamaruAnimationFrame = null;
 var tamaruPaused = false;
+var tamaruConfig = null;
+var tamaruState = null;
 function applyThemeVars(vars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
@@ -474,8 +488,8 @@ function applyThemeVars(vars) {
 }
 function initVirtualTrackball(config) {
   if (tamaruContainer) return;
-  const merged = { ...DEFAULT_CONFIG, ...config };
-  const themeVars = themes[merged.theme] || themes["default"];
+  tamaruConfig = { ...DEFAULT_CONFIG, ...config };
+  const themeVars = themes[tamaruConfig.theme] || themes["default"];
   applyThemeVars(themeVars);
   injectStyleTag(styles_default);
   const container = createWidgetContainer();
@@ -498,7 +512,7 @@ function initVirtualTrackball(config) {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
-    feedback("grab", merged);
+    feedback("grab", tamaruConfig);
   });
   dragHandle.addEventListener("pointermove", (e) => {
     if (!isWidgetDragging) return;
@@ -512,7 +526,7 @@ function initVirtualTrackball(config) {
       container,
       currentLeft,
       currentTop,
-      (ev) => feedback(ev, merged)
+      (ev) => feedback(ev, tamaruConfig)
     );
     currentLeft = pos.left;
     currentTop = pos.top;
@@ -522,7 +536,7 @@ function initVirtualTrackball(config) {
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
     snapToEdgeHandler();
-    feedback("release", merged);
+    feedback("release", tamaruConfig);
   });
   window.addEventListener("resize", snapToEdgeHandler);
   const toggleBtn = container.querySelector("#vt-toggle-btn");
@@ -571,12 +585,12 @@ function initVirtualTrackball(config) {
       state,
       dx,
       dy,
-      (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container),
+      (dx2, dy2) => doScroll(dx2, dy2, tamaruConfig.scrollMode, container),
       updateTextureHandler
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", merged);
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", tamaruConfig);
   });
   viewport.addEventListener("pointerup", (e) => {
     isTrackballDragging = false;
@@ -593,15 +607,16 @@ function initVirtualTrackball(config) {
     },
     { passive: false }
   );
+  tamaruState = state;
   const physicsLoop = createPhysicsLoop(
     state,
     () => isTrackballDragging,
     () => tamaruPaused,
     applyMovement,
     updateTextureHandler,
-    merged,
+    tamaruConfig,
     container,
-    (event) => feedback(event, merged)
+    (event) => feedback(event, tamaruConfig)
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
   const controls = container.querySelector("#vt-controls");
@@ -638,6 +653,33 @@ function initVirtualTrackball(config) {
   });
   setControlsVisible(controls, false);
 }
+function updateVirtualTrackballConfig(newConfig) {
+  if (!tamaruContainer || !tamaruConfig) return;
+  Object.assign(tamaruConfig, newConfig);
+  if (newConfig.theme) {
+    const themeVars = themes[tamaruConfig.theme] || themes["default"];
+    applyThemeVars(themeVars);
+  }
+  if (tamaruState) {
+    if (typeof newConfig.friction === "number") tamaruState.friction = tamaruConfig.friction;
+  }
+  if (typeof newConfig.size === "number") {
+    const size = tamaruConfig.size;
+    tamaruContainer.style.width = size + "px";
+    tamaruContainer.style.height = size + "px";
+    const trackballArea = tamaruContainer.querySelector("#vt-trackball-area");
+    if (trackballArea) {
+      trackballArea.style.width = size + "px";
+      trackballArea.style.height = size + "px";
+    }
+    const sphere = tamaruContainer.querySelector("#vt-sphere");
+    if (sphere) {
+      const inner = Math.max(0, size - 20);
+      sphere.style.width = inner + "px";
+      sphere.style.height = inner + "px";
+    }
+  }
+}
 function destroyVirtualTrackball() {
   if (!tamaruContainer) return;
   if (tamaruAnimationFrame !== null) {
@@ -668,6 +710,7 @@ function resumeVirtualTrackball() {
   initVirtualTrackball,
   pauseVirtualTrackball,
   resumeVirtualTrackball,
-  showVirtualTrackball
+  showVirtualTrackball,
+  updateVirtualTrackballConfig
 });
 //# sourceMappingURL=main.js.map
