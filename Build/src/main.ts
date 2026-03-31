@@ -314,7 +314,7 @@ export function destroyVirtualTrackball(): void {
   // Remove DOM
   tamaruContainer.remove();
   tamaruContainer = null;
-  const styleTag = document.getElementById("vt-style-tag");
+  const styleTag = document.getElementById("vt-styles");
   if (styleTag) styleTag.remove();
 }
 
