@@ -242,9 +242,161 @@ function snapToEdge(currentLeft, currentTop, containerRect, windowWidth, windowH
   return { left, top };
 }
 
+// src/types.ts
+var DEFAULT_CONFIG = {
+  sound: false,
+  haptics: false,
+  theme: "default",
+  scrollMode: "page",
+  friction: 0.92,
+  sensitivity: 1.8,
+  snapDistance: 80,
+  size: 120
+};
+
+// themes/default.json
+var default_default = {
+  name: "Default",
+  author: "NellowTCS",
+  desc: "Standard blue theme for Tamaru.",
+  sphereColor: "#0b3d6e",
+  textureColor: "#1e5ba3",
+  shadingLight: "rgba(255,255,255,0.5)",
+  shadingDark: "rgba(0,0,0,0.8)",
+  glow: "#5cabff",
+  miniIcon: "#5cabff"
+};
+
+// themes/aqua.json
+var aqua_default = {
+  name: "Aqua",
+  author: "NellowTCS",
+  desc: "Aqua (macOS-like) theme.",
+  sphereColor: "#1ca9e6",
+  textureColor: "#5fd0ff",
+  shadingLight: "rgba(255,255,255,0.6)",
+  shadingDark: "rgba(0,0,0,0.7)",
+  glow: "#aefbff",
+  miniIcon: "#aefbff"
+};
+
+// themes/red.json
+var red_default = {
+  name: "Red",
+  author: "NellowTCS",
+  desc: "Red accent theme.",
+  sphereColor: "#b91c1c",
+  textureColor: "#f87171",
+  shadingLight: "rgba(255,255,255,0.5)",
+  shadingDark: "rgba(0,0,0,0.8)",
+  glow: "#ffb4b4",
+  miniIcon: "#ffb4b4"
+};
+
+// themes/glossy.json
+var glossy_default = {
+  name: "Glossy",
+  author: "NellowTCS",
+  desc: "Glossy light theme.",
+  sphereColor: "#e0e0e0",
+  textureColor: "#bdbdbd",
+  shadingLight: "rgba(255,255,255,0.8)",
+  shadingDark: "rgba(0,0,0,0.5)",
+  glow: "#ffffff",
+  miniIcon: "#ffffff"
+};
+
+// themes/metal.json
+var metal_default = {
+  name: "Metal",
+  author: "NellowTCS",
+  desc: "Metallic gray theme.",
+  sphereColor: "#757575",
+  textureColor: "#b0b0b0",
+  shadingLight: "rgba(255,255,255,0.7)",
+  shadingDark: "rgba(0,0,0,0.7)",
+  glow: "#e0e0e0",
+  miniIcon: "#e0e0e0"
+};
+
+// src/themeLoader.ts
+var themes = {
+  default: default_default,
+  aqua: aqua_default,
+  red: red_default,
+  glossy: glossy_default,
+  metal: metal_default
+};
+
+// src/scrollUtil.ts
+function findNearestScrollable(el) {
+  let node = el;
+  while (node && node !== document.body) {
+    const style = window.getComputedStyle(node);
+    const overflowY = style.overflowY;
+    const overflowX = style.overflowX;
+    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    if ((overflowX === "auto" || overflowX === "scroll") && node.scrollWidth > node.clientWidth) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+function doScroll(dx, dy, mode, target) {
+  const scrollable = findNearestScrollable(target);
+  switch (mode) {
+    case "page":
+      window.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      break;
+    case "nearest":
+      if (scrollable) {
+        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      }
+      break;
+    case "horizontal":
+      if (scrollable) {
+        scrollable.scrollBy({ left: dx, top: 0, behavior: "auto" });
+      }
+      break;
+    case "momentum":
+      if (scrollable) {
+        scrollable.scrollBy({ left: dx * 2, top: dy * 2, behavior: "smooth" });
+      }
+      break;
+    default:
+      if (scrollable) {
+        scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });
+      }
+  }
+}
+
+// src/sound.ts
+function playSound(event) {
+}
+
+// src/haptics.ts
+function triggerHaptic(event) {
+}
+
 // src/main.ts
-function initVirtualTrackball() {
+function applyThemeVars(vars) {
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([key, value]) => {
+    if (key === "name" || key === "author" || key === "desc") return;
+    root.style.setProperty(
+      `--vt-${key.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}`,
+      value
+    );
+  });
+}
+function initVirtualTrackball(config) {
   if (document.getElementById("vt-widget-container")) return;
+  const merged = { ...DEFAULT_CONFIG, ...config };
+  const themeVars = themes[merged.theme] || themes["default"];
+  applyThemeVars(themeVars);
   injectStyleTag(styles_default);
   const container = createWidgetContainer();
   document.body.appendChild(container);
@@ -265,6 +417,7 @@ function initVirtualTrackball() {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
+    feedback("grab");
   });
   dragHandle.addEventListener("pointermove", (e) => {
     if (!isWidgetDragging) return;
@@ -286,12 +439,15 @@ function initVirtualTrackball() {
     currentTop = pos.top;
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
+    doSnapToEdge();
+    feedback("snap");
   }
   dragHandle.addEventListener("pointerup", (e) => {
     isWidgetDragging = false;
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
     doSnapToEdge();
+    feedback("release");
   });
   window.addEventListener("resize", doSnapToEdge);
   const toggleBtn = container.querySelector("#vt-toggle-btn");
@@ -338,9 +494,10 @@ function initVirtualTrackball() {
     const dy = e.clientY - tbPrevMouseY;
     state.velX = dx;
     state.velY = dy;
-    applyMovement(state, dx, dy, window.scrollBy.bind(window), updateTexture);
+    applyMovement(state, dx, dy, (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container), updateTexture);
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin");
   });
   viewport.addEventListener("pointerup", (e) => {
     isTrackballDragging = false;
@@ -361,14 +518,9 @@ function initVirtualTrackball() {
     if (!isTrackballDragging) {
       updatePhysics(
         state,
-        (dx, dy) => applyMovement(
-          state,
-          dx,
-          dy,
-          window.scrollBy.bind(window),
-          updateTexture
-        )
+        (dx, dy) => applyMovement(state, dx, dy, (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container), updateTexture)
       );
+      if (state.velX === 0 && state.velY === 0) feedback("stop");
     }
     requestAnimationFrame(physicsLoop);
   }
@@ -402,6 +554,10 @@ function initVirtualTrackball() {
   controls.addEventListener("mouseenter", showControls);
   controls.addEventListener("mouseleave", hideControlsWithDelay);
   setControlsVisible(false);
+  function feedback(event) {
+    if (merged.sound) playSound(event);
+    if (merged.haptics) triggerHaptic(event);
+  }
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
