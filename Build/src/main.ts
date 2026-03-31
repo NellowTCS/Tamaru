@@ -22,6 +22,8 @@ type ThemeVars = (typeof themes)["default"];
 let tamaruContainer: HTMLElement | null = null;
 let tamaruAnimationFrame: number | null = null;
 let tamaruPaused = false;
+let tamaruConfig: Required<TamaruConfig> | null = null;
+let tamaruState: TrackballState | null = null;
 
 function applyThemeVars(vars: ThemeVars) {
   const root = document.documentElement;
@@ -36,9 +38,9 @@ function applyThemeVars(vars: ThemeVars) {
 
 export function initVirtualTrackball(config?: TamaruConfig): void {
   if (tamaruContainer) return; // already mounted
-  const merged = { ...DEFAULT_CONFIG, ...config };
+  tamaruConfig = { ...DEFAULT_CONFIG, ...config };
   // Apply theme
-  const themeVars = themes[merged.theme] || themes["default"];
+  const themeVars = themes[tamaruConfig.theme] || themes["default"];
   applyThemeVars(themeVars);
   injectStyleTag(styles as unknown as string);
   const container = createWidgetContainer();
@@ -66,7 +68,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
-    feedback("grab", merged);
+    feedback("grab", tamaruConfig!);
   });
 
   dragHandle.addEventListener("pointermove", (e: PointerEvent) => {
@@ -79,7 +81,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
 
   const snapToEdgeHandler = () => {
     const pos = doSnapToEdge(container, currentLeft, currentTop, (ev: "snap") =>
-      feedback(ev, merged),
+      feedback(ev, tamaruConfig!),
     );
     currentLeft = pos.left;
     currentTop = pos.top;
@@ -90,7 +92,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
     snapToEdgeHandler();
-    feedback("release", merged);
+    feedback("release", tamaruConfig!);
   });
 
   window.addEventListener("resize", snapToEdgeHandler);
@@ -149,12 +151,12 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
       state,
       dx,
       dy,
-      (dx, dy) => doScroll(dx, dy, merged.scrollMode, container),
+      (dx, dy) => doScroll(dx, dy, tamaruConfig!.scrollMode, container),
       updateTextureHandler,
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", merged);
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", tamaruConfig!);
   });
 
   viewport.addEventListener("pointerup", (e: PointerEvent) => {
@@ -174,15 +176,16 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     { passive: false },
   );
 
+  tamaruState = state;
   const physicsLoop = createPhysicsLoop(
     state,
     () => isTrackballDragging,
     () => tamaruPaused,
     applyMovement,
     updateTextureHandler,
-    merged,
+    tamaruConfig!,
     container,
-    (event: string) => feedback(event as any, merged),
+    (event: string) => feedback(event as any, tamaruConfig!),
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
 
@@ -221,6 +224,43 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
 
   // Hide controls initially
   setControlsVisible(controls, false);
+
+  // expose internals via module-level refs so config can be updated later
+}
+
+// Update config at runtime
+export function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): void {
+  if (!tamaruContainer || !tamaruConfig) return;
+  Object.assign(tamaruConfig, newConfig);
+
+  // Reapply theme if changed
+  if (newConfig.theme) {
+    const themeVars = themes[tamaruConfig.theme] || themes["default"];
+    applyThemeVars(themeVars);
+  }
+
+  // Update state-driven values
+  if (tamaruState) {
+    if (typeof newConfig.friction === "number") tamaruState.friction = tamaruConfig.friction;
+  }
+
+  // Update container size if changed
+  if (typeof newConfig.size === "number") {
+    const size = tamaruConfig.size;
+    tamaruContainer.style.width = size + "px";
+    tamaruContainer.style.height = size + "px";
+    const trackballArea = tamaruContainer.querySelector("#vt-trackball-area") as HTMLElement | null;
+    if (trackballArea) {
+      trackballArea.style.width = size + "px";
+      trackballArea.style.height = size + "px";
+    }
+    const sphere = tamaruContainer.querySelector("#vt-sphere") as HTMLElement | null;
+    if (sphere) {
+      const inner = Math.max(0, size - 20);
+      sphere.style.width = inner + "px";
+      sphere.style.height = inner + "px";
+    }
+  }
 }
 
 // destroy

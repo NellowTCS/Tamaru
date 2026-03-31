@@ -7,7 +7,7 @@ export function createPhysicsLoop(
   tamaruPaused: () => boolean,
   applyMovement: Function,
   updateTexture: Function,
-  merged: any,
+  config: any,
   container: HTMLElement,
   feedback: (event: string) => void,
 ) {
@@ -20,7 +20,7 @@ export function createPhysicsLoop(
           dx,
           dy,
           (dx: number, dy: number) =>
-            doScroll(dx, dy, merged.scrollMode, container),
+            doScroll(dx, dy, config.scrollMode, container),
           updateTexture,
         ),
       );
