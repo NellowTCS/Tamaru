@@ -20,7 +20,12 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/main.ts
 var main_exports = {};
 __export(main_exports, {
-  initVirtualTrackball: () => initVirtualTrackball
+  destroyVirtualTrackball: () => destroyVirtualTrackball,
+  hideVirtualTrackball: () => hideVirtualTrackball,
+  initVirtualTrackball: () => initVirtualTrackball,
+  pauseVirtualTrackball: () => pauseVirtualTrackball,
+  resumeVirtualTrackball: () => resumeVirtualTrackball,
+  showVirtualTrackball: () => showVirtualTrackball
 });
 module.exports = __toCommonJS(main_exports);
 
@@ -178,7 +183,7 @@ var styles_default = `#vt-widget-container {
     display: block;
 }`;
 
-// src/dom.ts
+// src/domManager.ts
 function createWidgetContainer() {
   const container = document.createElement("div");
   container.id = "vt-widget-container";
@@ -208,12 +213,12 @@ function injectStyleTag(styles) {
 }
 
 // src/trackball.ts
-function applyMovement(state, dx, dy, scrollCallback, updateTexture) {
+function applyMovement(state, dx, dy, scrollCallback, updateTexture2) {
   const scrollSensitivity = 1.8;
   scrollCallback(-dx * scrollSensitivity, -dy * scrollSensitivity);
   state.texPosX += dx * 1.5;
   state.texPosY += dy * 1.5;
-  updateTexture(Math.round(state.texPosX), Math.round(state.texPosY));
+  updateTexture2(Math.round(state.texPosX), Math.round(state.texPosY));
 }
 function updatePhysics(state, movementFn) {
   if (Math.abs(state.velX) >= 0.1 || Math.abs(state.velY) >= 0.1) {
@@ -327,8 +332,25 @@ var themes = {
   glossy: glossy_default,
   metal: metal_default
 };
+function updateTexture(texture, x, y) {
+  texture.style.backgroundPosition = `${x}px ${y}px`;
+}
 
-// src/scrollUtil.ts
+// src/scrollEngine.ts
+function doSnapToEdge(container, currentLeft, currentTop, feedback2) {
+  const rect = container.getBoundingClientRect();
+  const pos = snapToEdge(
+    currentLeft,
+    currentTop,
+    rect,
+    window.innerWidth,
+    window.innerHeight
+  );
+  container.style.left = pos.left + "px";
+  container.style.top = pos.top + "px";
+  feedback2("snap");
+  return pos;
+}
 function findNearestScrollable(el) {
   let node = el;
   while (node && node !== document.body) {
@@ -373,15 +395,73 @@ function doScroll(dx, dy, mode, target) {
   }
 }
 
-// src/sound.ts
-function playSound(event) {
+// src/controlsManager.ts
+function setControlsVisible(controls, visible) {
+  if (visible) {
+    controls.classList.add("vt-controls-visible");
+  } else {
+    controls.classList.remove("vt-controls-visible");
+  }
+}
+function showControls(controls, controlsHideTimeout, setControlsVisible2) {
+  if (controlsHideTimeout) {
+    clearTimeout(controlsHideTimeout);
+    controlsHideTimeout = null;
+  }
+  setControlsVisible2(controls, true);
+  return controlsHideTimeout;
+}
+function hideControlsWithDelay(container, controls, controlsHideTimeout, setControlsVisible2) {
+  if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
+  return setTimeout(() => {
+    if (!container.matches(":hover") && !controls.matches(":hover")) {
+      setControlsVisible2(controls, false);
+    }
+  }, 350);
 }
 
-// src/haptics.ts
+// src/hapticEngine.ts
 function triggerHaptic(event) {
 }
 
+// src/sound.ts
+function playSound(event) {
+}
+function feedback(event, config) {
+  if (config.sound) playSound(event);
+  if (config.haptics) triggerHaptic(event);
+}
+
+// src/physicsEngine.ts
+function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovement2, updateTexture2, merged, container, feedback2) {
+  let wasStopped = true;
+  function physicsLoop() {
+    if (!tamaruPaused2() && !isTrackballDragging()) {
+      updatePhysics(
+        state,
+        (dx, dy) => applyMovement2(
+          state,
+          dx,
+          dy,
+          (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container),
+          updateTexture2
+        )
+      );
+      const stopped = state.velX === 0 && state.velY === 0;
+      if (stopped && !wasStopped) {
+        feedback2("stop");
+      }
+      wasStopped = stopped;
+    }
+    requestAnimationFrame(physicsLoop);
+  }
+  return physicsLoop;
+}
+
 // src/main.ts
+var tamaruContainer = null;
+var tamaruAnimationFrame = null;
+var tamaruPaused = false;
 function applyThemeVars(vars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
@@ -393,13 +473,14 @@ function applyThemeVars(vars) {
   });
 }
 function initVirtualTrackball(config) {
-  if (document.getElementById("vt-widget-container")) return;
+  if (tamaruContainer) return;
   const merged = { ...DEFAULT_CONFIG, ...config };
   const themeVars = themes[merged.theme] || themes["default"];
   applyThemeVars(themeVars);
   injectStyleTag(styles_default);
   const container = createWidgetContainer();
   document.body.appendChild(container);
+  tamaruContainer = container;
   let currentLeft = window.innerWidth - 120 - 24;
   let currentTop = window.innerHeight - 120 - 24;
   container.style.left = currentLeft + "px";
@@ -417,7 +498,7 @@ function initVirtualTrackball(config) {
     startTop = currentTop;
     dragHandle.setPointerCapture(e.pointerId);
     e.stopPropagation();
-    feedback("grab");
+    feedback("grab", merged);
   });
   dragHandle.addEventListener("pointermove", (e) => {
     if (!isWidgetDragging) return;
@@ -426,29 +507,24 @@ function initVirtualTrackball(config) {
     container.style.left = currentLeft + "px";
     container.style.top = currentTop + "px";
   });
-  function doSnapToEdge() {
-    const rect = container.getBoundingClientRect();
-    const pos = snapToEdge(
+  const snapToEdgeHandler = () => {
+    const pos = doSnapToEdge(
+      container,
       currentLeft,
       currentTop,
-      rect,
-      window.innerWidth,
-      window.innerHeight
+      (ev) => feedback(ev, merged)
     );
     currentLeft = pos.left;
     currentTop = pos.top;
-    container.style.left = currentLeft + "px";
-    container.style.top = currentTop + "px";
-    feedback("snap");
-  }
+  };
   dragHandle.addEventListener("pointerup", (e) => {
     isWidgetDragging = false;
     container.classList.remove("is-dragging");
     dragHandle.releasePointerCapture(e.pointerId);
-    doSnapToEdge();
-    feedback("release");
+    snapToEdgeHandler();
+    feedback("release", merged);
   });
-  window.addEventListener("resize", doSnapToEdge);
+  window.addEventListener("resize", snapToEdgeHandler);
   const toggleBtn = container.querySelector("#vt-toggle-btn");
   const trackballArea = container.querySelector(
     "#vt-trackball-area"
@@ -456,13 +532,13 @@ function initVirtualTrackball(config) {
   toggleBtn.addEventListener("click", () => {
     container.classList.toggle("vt-mini");
     toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
-    doSnapToEdge();
+    snapToEdgeHandler();
   });
   trackballArea.addEventListener("click", () => {
     if (container.classList.contains("vt-mini")) {
       container.classList.remove("vt-mini");
       toggleBtn.textContent = "-";
-      doSnapToEdge();
+      snapToEdgeHandler();
     }
   });
   const viewport = container.querySelector("#vt-viewport");
@@ -476,9 +552,7 @@ function initVirtualTrackball(config) {
   };
   let isTrackballDragging = false;
   let tbPrevMouseX = 0, tbPrevMouseY = 0;
-  function updateTexture(x, y) {
-    texture.style.backgroundPosition = `${x}px ${y}px`;
-  }
+  const updateTextureHandler = (x, y) => updateTexture(texture, x, y);
   viewport.addEventListener("pointerdown", (e) => {
     isTrackballDragging = true;
     tbPrevMouseX = e.clientX;
@@ -493,10 +567,16 @@ function initVirtualTrackball(config) {
     const dy = e.clientY - tbPrevMouseY;
     state.velX = dx;
     state.velY = dy;
-    applyMovement(state, dx, dy, (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container), updateTexture);
+    applyMovement(
+      state,
+      dx,
+      dy,
+      (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container),
+      updateTextureHandler
+    );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin");
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", merged);
   });
   viewport.addEventListener("pointerup", (e) => {
     isTrackballDragging = false;
@@ -513,58 +593,81 @@ function initVirtualTrackball(config) {
     },
     { passive: false }
   );
-  let wasStopped = true;
-  function physicsLoop() {
-    if (!isTrackballDragging) {
-      updatePhysics(
-        state,
-        (dx, dy) => applyMovement(state, dx, dy, (dx2, dy2) => doScroll(dx2, dy2, merged.scrollMode, container), updateTexture)
-      );
-      const stopped = state.velX === 0 && state.velY === 0;
-      if (stopped && !wasStopped) {
-        feedback("stop");
-      }
-      wasStopped = stopped;
-    }
-    requestAnimationFrame(physicsLoop);
-  }
-  requestAnimationFrame(physicsLoop);
+  const physicsLoop = createPhysicsLoop(
+    state,
+    () => isTrackballDragging,
+    () => tamaruPaused,
+    applyMovement,
+    updateTextureHandler,
+    merged,
+    container,
+    (event) => feedback(event, merged)
+  );
+  tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
   const controls = container.querySelector("#vt-controls");
   let controlsHideTimeout = null;
-  function setControlsVisible(visible) {
-    if (visible) {
-      controls.classList.add("vt-controls-visible");
-    } else {
-      controls.classList.remove("vt-controls-visible");
-    }
+  container.addEventListener("mouseenter", () => {
+    controlsHideTimeout = showControls(
+      controls,
+      controlsHideTimeout,
+      setControlsVisible
+    );
+  });
+  container.addEventListener("mouseleave", () => {
+    controlsHideTimeout = hideControlsWithDelay(
+      container,
+      controls,
+      controlsHideTimeout,
+      setControlsVisible
+    );
+  });
+  controls.addEventListener("mouseenter", () => {
+    controlsHideTimeout = showControls(
+      controls,
+      controlsHideTimeout,
+      setControlsVisible
+    );
+  });
+  controls.addEventListener("mouseleave", () => {
+    controlsHideTimeout = hideControlsWithDelay(
+      container,
+      controls,
+      controlsHideTimeout,
+      setControlsVisible
+    );
+  });
+  setControlsVisible(controls, false);
+}
+function destroyVirtualTrackball() {
+  if (!tamaruContainer) return;
+  if (tamaruAnimationFrame !== null) {
+    cancelAnimationFrame(tamaruAnimationFrame);
+    tamaruAnimationFrame = null;
   }
-  function showControls() {
-    if (controlsHideTimeout) {
-      clearTimeout(controlsHideTimeout);
-      controlsHideTimeout = null;
-    }
-    setControlsVisible(true);
-  }
-  function hideControlsWithDelay() {
-    if (controlsHideTimeout) clearTimeout(controlsHideTimeout);
-    controlsHideTimeout = setTimeout(() => {
-      if (!container.matches(":hover") && !controls.matches(":hover")) {
-        setControlsVisible(false);
-      }
-    }, 350);
-  }
-  container.addEventListener("mouseenter", showControls);
-  container.addEventListener("mouseleave", hideControlsWithDelay);
-  controls.addEventListener("mouseenter", showControls);
-  controls.addEventListener("mouseleave", hideControlsWithDelay);
-  setControlsVisible(false);
-  function feedback(event) {
-    if (merged.sound) playSound(event);
-    if (merged.haptics) triggerHaptic(event);
-  }
+  tamaruContainer.remove();
+  tamaruContainer = null;
+  const styleTag = document.getElementById("vt-style-tag");
+  if (styleTag) styleTag.remove();
+}
+function hideVirtualTrackball() {
+  if (tamaruContainer) tamaruContainer.style.display = "none";
+}
+function showVirtualTrackball() {
+  if (tamaruContainer) tamaruContainer.style.display = "";
+}
+function pauseVirtualTrackball() {
+  tamaruPaused = true;
+}
+function resumeVirtualTrackball() {
+  tamaruPaused = false;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  initVirtualTrackball
+  destroyVirtualTrackball,
+  hideVirtualTrackball,
+  initVirtualTrackball,
+  pauseVirtualTrackball,
+  resumeVirtualTrackball,
+  showVirtualTrackball
 });
 //# sourceMappingURL=main.js.map
