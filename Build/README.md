@@ -11,6 +11,10 @@ A modular, self-contained JavaScript/TypeScript widget for adding a draggable, i
 - Trackball area for scrolling (with inertia)
 - Minimize/restore toggle
 - Snap-to-edge logic
+- Theming system with multiple built-in color schemes (`default`, `aqua`, `red`, `glossy`, `metal`)
+- Configurable sound and haptics feedback with naturalized mechanical variation
+- Support for different scroll modes (`page`, `nearest`, `horizontal`, `momentum`)
+- Configurable behaviors (friction, sensitivity, snap distance, roll sound level)
 - All styles injected automatically
 - Modular TypeScript codebase
 
@@ -27,9 +31,27 @@ npm install tamaru
 ### As a module (ESM/TypeScript)
 
 ```js
-import { initVirtualTrackball } from 'tamaru';
-initVirtualTrackball();
+import { initVirtualTrackball, updateVirtualTrackballConfig } from 'tamaru';
+
+initVirtualTrackball({
+  theme: 'glossy',
+  sound: true,
+  rollSoundLevel: 0.85,
+  haptics: true,
+  scrollMode: 'page',
+  size: 120,
+  friction: 0.92,
+  sensitivity: 1.8
+});
+
+// Update later:
+updateVirtualTrackballConfig({
+  theme: 'metal',
+  rollSoundLevel: 0.65
+});
 ```
+
+`rollSoundLevel` accepts values from `0` to `1` and controls the continuous rolling bed intensity.
 
 ### In the browser (UMD or ESM build)
 

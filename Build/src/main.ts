@@ -24,6 +24,7 @@ let tamaruAnimationFrame: number | null = null;
 let tamaruPaused = false;
 let tamaruConfig: Required<TamaruConfig> | null = null;
 let tamaruState: TrackballState | null = null;
+let lastPointerSpinFeedbackAt = 0;
 
 function applyThemeVars(vars: ThemeVars) {
   const root = document.documentElement;
@@ -77,8 +78,11 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   });
 
   const snapToEdgeHandler = () => {
-    const pos = doSnapToEdge(container, currentLeft, currentTop, (ev: "snap") =>
-      feedback(ev, tamaruConfig!),
+    const pos = doSnapToEdge(
+      container,
+      currentLeft,
+      currentTop,
+      (ev: "snap") => feedback(ev, tamaruConfig!),
       tamaruConfig!.snapDistance,
     );
     currentLeft = pos.left;
@@ -166,20 +170,28 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
       state,
       dx,
       dy,
-      (dx, dy) => doScroll(
-        dx,
-        dy,
-        tamaruConfig!.scrollMode,
-        container,
-        tamaruConfig!.scrollFallback,
-        tamaruConfig!.scrollFallbackContainer,
-      ),
+      (dx, dy) =>
+        doScroll(
+          dx,
+          dy,
+          tamaruConfig!.scrollMode,
+          container,
+          tamaruConfig!.scrollFallback,
+          tamaruConfig!.scrollFallbackContainer,
+        ),
       updateTextureHandler,
       tamaruConfig!.sensitivity,
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", tamaruConfig!);
+    const speed = Math.hypot(dx, dy);
+    if (speed > 10) {
+      const now = performance.now();
+      if (now - lastPointerSpinFeedbackAt >= 85) {
+        lastPointerSpinFeedbackAt = now;
+        feedback("spin", tamaruConfig!, { speed });
+      }
+    }
   });
 
   viewport.addEventListener("pointerup", (e: PointerEvent) => {
@@ -208,7 +220,8 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     updateTextureHandler,
     tamaruConfig!,
     container,
-    (event: string) => feedback(event as any, tamaruConfig!),
+    (event: string, speed?: number) =>
+      feedback(event as any, tamaruConfig!, { speed }),
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
 
@@ -291,13 +304,13 @@ export function updateVirtualTrackballConfig(
       sphere.style.height = inner + "px";
     }
     // If widget currently in mini mode, adjust mini sizing to remain proportional
-    if (tamaruContainer.classList.contains('vt-mini')) {
+    if (tamaruContainer.classList.contains("vt-mini")) {
       const miniSize = Math.max(40, Math.round(size * 0.4));
-      tamaruContainer.style.width = miniSize + 'px';
-      tamaruContainer.style.height = miniSize + 'px';
+      tamaruContainer.style.width = miniSize + "px";
+      tamaruContainer.style.height = miniSize + "px";
       if (trackballArea) {
-        trackballArea.style.width = miniSize + 'px';
-        trackballArea.style.height = miniSize + 'px';
+        trackballArea.style.width = miniSize + "px";
+        trackballArea.style.height = miniSize + "px";
       }
     }
   }

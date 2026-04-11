@@ -1,10 +1,10 @@
 # Todo
 
 - [X] Integrate tactus for haptics
-- [ ] Add sound effects for grab, release, snap, spin, stop
+- [X] Add sound effects for grab, release, snap, spin, stop, roll
 - [X] Config system (merge user config with defaults)
 - [X] Theme system (JSON per theme, loader, CSS vars)
 - [X] Scroll mode logic (page, nearest, horizontal, momentum)
-- [x] auto reconfig if config changed after mount
-- [ ] Demo: test all config options
-- [ ] Docs: update README and GUIDE
+- [X] auto reconfig if config changed after mount
+- [X] Demo: test all config options
+- [X] Docs: update README and GUIDE

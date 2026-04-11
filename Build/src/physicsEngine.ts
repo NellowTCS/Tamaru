@@ -9,9 +9,10 @@ export function createPhysicsLoop(
   updateTexture: Function,
   config: any,
   container: HTMLElement,
-  feedback: (event: string) => void,
+  feedback: (event: string, speed?: number) => void,
 ) {
   let wasStopped = true;
+  let lastSpinFeedbackAt = 0;
   function physicsLoop() {
     if (!tamaruPaused() && !isTrackballDragging()) {
       updatePhysics(state, (dx: number, dy: number) =>
@@ -32,6 +33,16 @@ export function createPhysicsLoop(
           config.sensitivity,
         ),
       );
+
+      const speed = Math.hypot(state.velX || 0, state.velY || 0);
+      if (speed > 0.8) {
+        const now = performance.now();
+        if (now - lastSpinFeedbackAt >= 95) {
+          lastSpinFeedbackAt = now;
+          feedback("spin", speed);
+        }
+      }
+
       const stopped = state.velX === 0 && state.velY === 0;
       if (stopped && !wasStopped) {
         feedback("stop");

@@ -16,7 +16,7 @@ export function doSnapToEdge(
     window.innerWidth,
     window.innerHeight,
     24,
-    typeof snapDistance === 'number' ? snapDistance : undefined,
+    typeof snapDistance === "number" ? snapDistance : undefined,
   );
   container.style.left = pos.left + "px";
   container.style.top = pos.top + "px";
@@ -52,7 +52,7 @@ export function doScroll(
   dy: number,
   mode: TamaruScrollMode,
   target: HTMLElement,
-  scrollFallback: 'document' | 'none' | 'container' = 'document',
+  scrollFallback: "document" | "none" | "container" = "document",
   scrollFallbackContainer?: string,
 ): void {
   // Find nearest scrollable ancestor
@@ -62,11 +62,15 @@ export function doScroll(
   let scrollable: HTMLElement | null = nearest;
 
   if (!scrollable) {
-    if (scrollFallback === 'container' && scrollFallbackContainer) {
-      const el = document.querySelector(scrollFallbackContainer) as HTMLElement | null;
+    if (scrollFallback === "container" && scrollFallbackContainer) {
+      const el = document.querySelector(
+        scrollFallbackContainer,
+      ) as HTMLElement | null;
       if (el) scrollable = el;
-    } else if (scrollFallback === 'document') {
-      scrollable = (document.scrollingElement as HTMLElement) || document.documentElement as HTMLElement;
+    } else if (scrollFallback === "document") {
+      scrollable =
+        (document.scrollingElement as HTMLElement) ||
+        (document.documentElement as HTMLElement);
     } else {
       scrollable = null; // 'none' -> do nothing
     }
@@ -77,7 +81,10 @@ export function doScroll(
   switch (mode) {
     case "page":
       // Prefer window scrolling for page mode when scrolling document
-      if (scrollable === document.documentElement || scrollable === document.body) {
+      if (
+        scrollable === document.documentElement ||
+        scrollable === document.body
+      ) {
         window.scrollBy({ left: dx, top: dy, behavior: "auto" });
       } else {
         scrollable.scrollBy({ left: dx, top: dy, behavior: "auto" });

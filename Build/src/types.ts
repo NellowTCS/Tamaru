@@ -5,6 +5,8 @@ export type HapticEvent = "grab" | "release" | "snap" | "spin" | "stop";
 
 export interface TamaruConfig {
   sound?: boolean;
+  // 0..1 intensity multiplier for continuous rolling bed sound
+  rollSoundLevel?: number;
   haptics?: boolean;
   theme?: TamaruTheme;
   scrollMode?: TamaruScrollMode;
@@ -12,7 +14,7 @@ export interface TamaruConfig {
   // 'document' -> fall back to document scrolling (default)
   // 'none' -> do nothing when no ancestor found
   // 'container' -> use a user-specified selector in `scrollFallbackContainer`
-  scrollFallback?: 'document' | 'none' | 'container';
+  scrollFallback?: "document" | "none" | "container";
   // Optional selector string used when scrollFallback === 'container'
   scrollFallbackContainer?: string;
   friction?: number;
@@ -23,11 +25,12 @@ export interface TamaruConfig {
 
 export const DEFAULT_CONFIG: Required<TamaruConfig> = {
   sound: false,
+  rollSoundLevel: 0.45,
   haptics: false,
   theme: "default",
   scrollMode: "page",
-  scrollFallback: 'document',
-  scrollFallbackContainer: '',
+  scrollFallback: "document",
+  scrollFallbackContainer: "",
   friction: 0.92,
   sensitivity: 1.8,
   snapDistance: 80,
