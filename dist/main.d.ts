@@ -2,10 +2,11 @@ type TamaruTheme = "default" | "aqua" | "red" | "glossy" | "metal";
 type TamaruScrollMode = "page" | "nearest" | "horizontal" | "momentum";
 interface TamaruConfig {
     sound?: boolean;
+    rollSoundLevel?: number;
     haptics?: boolean;
     theme?: TamaruTheme;
     scrollMode?: TamaruScrollMode;
-    scrollFallback?: 'document' | 'none' | 'container';
+    scrollFallback?: "document" | "none" | "container";
     scrollFallbackContainer?: string;
     friction?: number;
     sensitivity?: number;

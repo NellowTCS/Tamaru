@@ -32,7 +32,7 @@
 </head>
 <body>
   <h1>Tamaru</h1>
-  <div class="desc">Drag the widget, use the trackball, or minimize it. This demo loads the library from <code>dist/main.js</code>.</div>
+  <div class="desc">Drag the widget, use the trackball, or minimize it. This demo loads the library from <code>dist/main.mjs</code>.</div>
   <div style="width:100%; max-width:1100px; display:flex; gap:24px; align-items:flex-start;">
     <aside id="config-panel" style="min-width:280px; background: #0f1720; padding:16px; border-radius:8px;">
       <h2 style="margin:0 0 8px 0; font-size:1.1rem">Config</h2>
@@ -45,6 +45,10 @@
           <tr>
             <td>haptics</td>
             <td style="text-align:right"><input id="cfg-haptics" type="checkbox" /></td>
+          </tr>
+          <tr>
+            <td>rollSoundLevel</td>
+            <td style="text-align:right"><input id="cfg-roll-level" type="range" min="0" max="1" step="0.05" value="0.85" /></td>
           </tr>
           <tr>
             <td>theme</td>
@@ -191,6 +195,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
 
     const DEFAULTS = {
       sound: false,
+      rollSoundLevel: 0.85,
       haptics: false,
       theme: 'default',
       scrollMode: 'page',
@@ -207,6 +212,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     function readAndApply() {
       const cfg = {
         sound: $('cfg-sound').checked,
+        rollSoundLevel: parseFloat($('cfg-roll-level').value),
         haptics: $('cfg-haptics').checked,
         theme: $('cfg-theme').value,
         scrollMode: $('cfg-scroll').value,
@@ -222,6 +228,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
 
     // init control defaults
     $('cfg-sound').checked = DEFAULTS.sound;
+    $('cfg-roll-level').value = DEFAULTS.rollSoundLevel;
     $('cfg-haptics').checked = DEFAULTS.haptics;
     $('cfg-theme').value = DEFAULTS.theme;
     $('cfg-scroll').value = DEFAULTS.scrollMode;
@@ -233,7 +240,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
 
     // attach change listeners
-    ['cfg-sound','cfg-haptics','cfg-theme','cfg-scroll','cfg-friction','cfg-sensitivity','cfg-snap','cfg-size','cfg-fallback','cfg-fallback-selector']
+    ['cfg-sound','cfg-roll-level','cfg-haptics','cfg-theme','cfg-scroll','cfg-friction','cfg-sensitivity','cfg-snap','cfg-size','cfg-fallback','cfg-fallback-selector']
       .forEach(id => $(id).addEventListener('input', () => readAndApply()));
 
     // init/destroy buttons

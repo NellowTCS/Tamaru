@@ -219,6 +219,7 @@ function snapToEdge(currentLeft, currentTop, containerRect, windowWidth, windowH
 // src/types.ts
 var DEFAULT_CONFIG = {
   sound: false,
+  rollSoundLevel: 0.45,
   haptics: false,
   theme: "default",
   scrollMode: "page",
@@ -345,7 +346,9 @@ function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallb
   let scrollable = nearest;
   if (!scrollable) {
     if (scrollFallback === "container" && scrollFallbackContainer) {
-      const el = document.querySelector(scrollFallbackContainer);
+      const el = document.querySelector(
+        scrollFallbackContainer
+      );
       if (el) scrollable = el;
     } else if (scrollFallback === "document") {
       scrollable = document.scrollingElement || document.documentElement;
@@ -469,16 +472,339 @@ function triggerHaptic2(event) {
 }
 
 // src/sound.ts
-function playSound(event) {
+var audioCtx = null;
+var masterGain = null;
+var compressor = null;
+var noiseBuf = null;
+var rollingBuf = null;
+var rollSrc = null;
+var rollMidFilt = null;
+var rollHiFilt = null;
+var rollShaper = null;
+var rollGain = null;
+var rollFadeTimer = null;
+var lastSpinAt = 0;
+var rollIsActive = false;
+var SPIN_MIN_INTERVAL_MS = 22;
+var SOUND_VAR = 0.12;
+function getAudioContext() {
+  if (typeof window === "undefined") return null;
+  if (!audioCtx) {
+    const w = window;
+    const Ctor = globalThis.AudioContext || w.webkitAudioContext;
+    if (!Ctor) return null;
+    const c = new Ctor();
+    audioCtx = c;
+    compressor = c.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 24;
+    compressor.ratio.value = 4;
+    compressor.attack.value = 3e-3;
+    compressor.release.value = 0.22;
+    masterGain = c.createGain();
+    masterGain.gain.value = 0.42;
+    compressor.connect(masterGain);
+    masterGain.connect(c.destination);
+  }
+  return audioCtx;
 }
-function feedback(event, config) {
-  if (config.sound) playSound(event);
+function out() {
+  return compressor;
+}
+function r(v, amt = SOUND_VAR) {
+  return v * (1 + (Math.random() - 0.5) * 2 * amt);
+}
+function jt(t, s = 2e-3) {
+  return t + (Math.random() - 0.5) * s;
+}
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+function normSpeed(s) {
+  return clamp01((s ?? 10) / 18);
+}
+function makeShaperCurve(amount) {
+  const n = 256, curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = i * 2 / n - 1;
+    curve[i] = (Math.PI + amount) * x / (Math.PI + amount * Math.abs(x));
+  }
+  return curve;
+}
+function ensureNoiseBuf(c) {
+  if (noiseBuf) return noiseBuf;
+  const len = Math.floor(c.sampleRate * 0.5);
+  const b = c.createBuffer(1, len, c.sampleRate);
+  const d = b.getChannelData(0);
+  let lp = 0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1;
+    lp = lp * 0.85 + w * 0.15;
+    d[i] = w * 0.6 + lp * 0.4;
+  }
+  noiseBuf = b;
+  return b;
+}
+function ensureRollingBuf(c) {
+  if (rollingBuf) return rollingBuf;
+  const len = Math.floor(c.sampleRate * 2.2);
+  const b = c.createBuffer(1, len, c.sampleRate);
+  const d = b.getChannelData(0);
+  let lp = 0, hp = 0, prev = 0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1;
+    lp = lp * 0.94 + w * 0.06;
+    const mid = w - lp;
+    hp = 0.97 * (hp + mid - prev);
+    prev = mid;
+    d[i] = mid * 0.55 + hp * 0.3 + w * 0.15;
+  }
+  const fade = Math.floor(c.sampleRate * 0.04);
+  for (let i = 0; i < fade; i++) {
+    const t = i / fade;
+    d[i] *= t;
+    d[len - 1 - i] *= t;
+  }
+  rollingBuf = b;
+  return b;
+}
+function env(g, t, peak, dur, atk = 3e-3) {
+  g.gain.setValueAtTime(1e-4, t);
+  g.gain.linearRampToValueAtTime(peak, t + atk);
+  g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+}
+function noiseBurst(c, t, dur, peak, ftype, freq, q = 0.9) {
+  const src = c.createBufferSource();
+  src.buffer = ensureNoiseBuf(c);
+  const f = c.createBiquadFilter();
+  f.type = ftype;
+  f.frequency.value = freq;
+  f.Q.value = q;
+  const g = c.createGain();
+  env(g, t, peak, dur);
+  src.connect(f);
+  f.connect(g);
+  g.connect(out());
+  src.start(t);
+  src.stop(t + dur + 0.02);
+}
+function toneBurst(c, t, dur, peak, type, f0, f1) {
+  const osc = c.createOscillator(), g = c.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(f0, t);
+  if (f1 != null)
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+  env(g, t, peak, dur, 4e-3);
+  osc.connect(g);
+  g.connect(out());
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+}
+function playGrabSound(c, t) {
+  noiseBurst(c, t, r(6e-3), r(0.22), "highpass", r(3200), r(0.6));
+  noiseBurst(c, t + 3e-3, r(0.045), r(0.12), "bandpass", r(680), r(0.7));
+  toneBurst(c, jt(t, 1e-3), r(0.075), r(0.07), "sine", r(145), r(90));
+  noiseBurst(c, t + 8e-3, r(0.06), r(0.055), "lowpass", r(280), r(0.5));
+}
+function playReleaseSound(c, t) {
+  noiseBurst(c, t, r(5e-3), r(0.15), "highpass", r(2800), r(0.55));
+  noiseBurst(c, t + 3e-3, r(0.032), r(0.085), "bandpass", r(600), r(0.65));
+  toneBurst(c, jt(t, 1e-3), r(0.06), r(0.04), "sine", r(130), r(80));
+}
+function playSnapSound(c, t) {
+  noiseBurst(c, t, r(4e-3), r(0.35), "highpass", r(5e3), r(0.5));
+  noiseBurst(c, t + 1e-3, r(0.018), r(0.22), "bandpass", r(1800), r(1.1));
+  toneBurst(c, jt(t, 5e-4), r(0.055), r(0.11), "triangle", r(380), r(160));
+  noiseBurst(c, t + 0.012, r(0.022), r(0.09), "bandpass", r(1100), r(0.8));
+}
+function playSpinTick(c, t, speed) {
+  const fc = 380 + speed * 560 + (Math.random() - 0.5) * 180;
+  const pk = 0.028 + speed * 0.038;
+  noiseBurst(c, t, r(9e-3), r(pk), "bandpass", fc, r(1.4));
+  if (Math.random() < 0.35) {
+    toneBurst(
+      c,
+      jt(t, 1e-3),
+      r(0.012),
+      r(0.012),
+      "sine",
+      r(200 + speed * 120)
+    );
+  }
+}
+function playStopSound(c, t, speed) {
+  const dur = 0.08 + speed * 0.18;
+  noiseBurst(
+    c,
+    t,
+    r(dur * 0.6),
+    r(0.08 + speed * 0.06),
+    "bandpass",
+    r(320 + speed * 140),
+    r(0.7)
+  );
+  toneBurst(
+    c,
+    jt(t, 2e-3),
+    r(dur * 0.9),
+    r(0.055),
+    "sine",
+    r(95 + speed * 55),
+    r(35)
+  );
+  noiseBurst(
+    c,
+    t + dur * 0.3,
+    r(dur * 0.5),
+    r(0.035),
+    "lowpass",
+    r(180),
+    r(0.45)
+  );
+  if (speed > 0.4) {
+    noiseBurst(
+      c,
+      t + dur * 0.55,
+      r(dur * 0.35),
+      r(0.02),
+      "bandpass",
+      r(260),
+      r(0.6)
+    );
+  }
+}
+function ensureRollingLayer(c) {
+  if (rollSrc) return;
+  rollSrc = c.createBufferSource();
+  rollSrc.buffer = ensureRollingBuf(c);
+  rollSrc.loop = true;
+  rollSrc.playbackRate.value = 1;
+  rollMidFilt = c.createBiquadFilter();
+  rollMidFilt.type = "bandpass";
+  rollMidFilt.frequency.value = 800;
+  rollMidFilt.Q.value = 0.6;
+  rollHiFilt = c.createBiquadFilter();
+  rollHiFilt.type = "highshelf";
+  rollHiFilt.frequency.value = 2200;
+  rollHiFilt.gain.value = 3;
+  rollShaper = c.createWaveShaper();
+  rollShaper.curve = makeShaperCurve(5);
+  rollShaper.oversample = "2x";
+  rollGain = c.createGain();
+  rollGain.gain.value = 1e-4;
+  rollSrc.connect(rollMidFilt);
+  rollMidFilt.connect(rollHiFilt);
+  rollHiFilt.connect(rollShaper);
+  rollShaper.connect(rollGain);
+  rollGain.connect(out());
+  rollSrc.start();
+}
+function setRollLevel(c, level, rampSec, speed) {
+  if (!rollGain || !rollMidFilt || !rollSrc) return;
+  const t = c.currentTime;
+  const scaled = clamp01(level) * (0.032 + speed * 0.068);
+  rollGain.gain.cancelScheduledValues(t);
+  rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 1e-4), t);
+  rollGain.gain.linearRampToValueAtTime(Math.max(1e-4, scaled), t + rampSec);
+  rollSrc.playbackRate.cancelScheduledValues(t);
+  rollSrc.playbackRate.setValueAtTime(rollSrc.playbackRate.value, t);
+  rollSrc.playbackRate.linearRampToValueAtTime(0.55 + speed * 1.1, t + rampSec);
+  rollMidFilt.frequency.cancelScheduledValues(t);
+  rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
+  rollMidFilt.frequency.linearRampToValueAtTime(420 + speed * 980, t + rampSec);
+}
+function touchRollingSound(c, speed) {
+  rollIsActive = true;
+  if (rollFadeTimer) {
+    clearTimeout(rollFadeTimer);
+    rollFadeTimer = null;
+  }
+  ensureRollingLayer(c);
+  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed);
+  rollFadeTimer = setTimeout(
+    () => {
+      rollFadeTimer = null;
+      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed);
+    },
+    140 + Math.random() * 50
+  );
+}
+function stopRollingSound(c, speed, immediate) {
+  rollIsActive = false;
+  if (rollFadeTimer) {
+    clearTimeout(rollFadeTimer);
+    rollFadeTimer = null;
+  }
+  if (!rollGain) return;
+  const fadeOut = immediate ? 0.04 : 0.18 + (1 - speed) * 0.14;
+  setRollLevel(c, 0, fadeOut, speed);
+  const silenceMs = (fadeOut + 0.1) * 1e3;
+  setTimeout(() => {
+    if (!rollIsActive) teardownRollNodes();
+  }, silenceMs);
+}
+function teardownRollNodes() {
+  try {
+    rollSrc?.stop();
+  } catch {
+  }
+  rollGain?.disconnect();
+  rollSrc = null;
+  rollGain = null;
+  rollMidFilt = null;
+  rollHiFilt = null;
+  rollShaper = null;
+}
+function tryResumeCtx(c) {
+  if (c.state === "suspended") void c.resume().catch(() => {
+  });
+}
+function playSound(event, config, options) {
+  try {
+    const c = getAudioContext();
+    if (!c || !out() || !masterGain) return;
+    tryResumeCtx(c);
+    const t = c.currentTime;
+    const rollScale = clamp01(config?.rollSoundLevel ?? 1);
+    const speed = normSpeed(options?.speed);
+    if (event === "spin") {
+      touchRollingSound(c, speed);
+      const now = performance.now();
+      const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
+      if (now - lastSpinAt < minGap) return;
+      lastSpinAt = now;
+    }
+    switch (event) {
+      case "grab":
+        playGrabSound(c, t);
+        break;
+      case "release":
+        playReleaseSound(c, t);
+        stopRollingSound(c, speed, true);
+        break;
+      case "snap":
+        playSnapSound(c, t);
+        break;
+      case "spin":
+        playSpinTick(c, t, speed);
+        break;
+      case "stop":
+        playStopSound(c, t, speed);
+        stopRollingSound(c, speed, false);
+        break;
+    }
+  } catch {
+  }
+}
+function feedback(event, config, options) {
+  if (config.sound) playSound(event, config, options);
   if (config.haptics) triggerHaptic2(event);
 }
 
 // src/physicsEngine.ts
 function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovement2, updateTexture2, config, container, feedback2) {
   let wasStopped = true;
+  let lastSpinFeedbackAt = 0;
   function physicsLoop() {
     if (!tamaruPaused2() && !isTrackballDragging()) {
       updatePhysics(
@@ -499,6 +825,14 @@ function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovem
           config.sensitivity
         )
       );
+      const speed = Math.hypot(state.velX || 0, state.velY || 0);
+      if (speed > 0.8) {
+        const now = performance.now();
+        if (now - lastSpinFeedbackAt >= 95) {
+          lastSpinFeedbackAt = now;
+          feedback2("spin", speed);
+        }
+      }
       const stopped = state.velX === 0 && state.velY === 0;
       if (stopped && !wasStopped) {
         feedback2("stop");
@@ -516,6 +850,7 @@ var tamaruAnimationFrame = null;
 var tamaruPaused = false;
 var tamaruConfig = null;
 var tamaruState = null;
+var lastPointerSpinFeedbackAt = 0;
 function applyThemeVars(vars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
@@ -650,7 +985,14 @@ function initVirtualTrackball(config) {
     );
     tbPrevMouseX = e.clientX;
     tbPrevMouseY = e.clientY;
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) feedback("spin", tamaruConfig);
+    const speed = Math.hypot(dx, dy);
+    if (speed > 10) {
+      const now = performance.now();
+      if (now - lastPointerSpinFeedbackAt >= 85) {
+        lastPointerSpinFeedbackAt = now;
+        feedback("spin", tamaruConfig, { speed });
+      }
+    }
   });
   viewport.addEventListener("pointerup", (e) => {
     isTrackballDragging = false;
@@ -676,7 +1018,7 @@ function initVirtualTrackball(config) {
     updateTextureHandler,
     tamaruConfig,
     container,
-    (event) => feedback(event, tamaruConfig)
+    (event, speed) => feedback(event, tamaruConfig, { speed })
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
   const controls = container.querySelector("#vt-controls");
