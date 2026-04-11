@@ -76,4 +76,4 @@ Find the demo online at <https://nellowtcs.me/Tamaru>!
 
 ## License
 
-MIT
+[MIT](LICENSE)
