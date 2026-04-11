@@ -53,7 +53,7 @@ updateVirtualTrackballConfig({
 
 `rollSoundLevel` accepts values from `0` to `1` and controls the continuous rolling bed intensity.
 
-### In the browser (UMD or ESM build)
+### In the browser (ESM build)
 
 ```html
 <!-- ESM -->
