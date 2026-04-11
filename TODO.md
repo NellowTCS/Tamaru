@@ -11,6 +11,11 @@
 - [ ] Fix rollSoundLevel mysteriously breaking
 - [ ] Fix roll continuing when it's still rolling when you click off the tab
 - [ ] Fix haptics not working at all for some weird reason
+- [ ] Fix the tiny gap when continuously scrolling
+- [ ] Make glossy theme more glossy
+- [ ] Add more themes
+- [ ] Fix clicking on the mini trackball breaking the ball
+- [ ] Fix stuff near the trackball not being interactive
 
 ## Done
 
