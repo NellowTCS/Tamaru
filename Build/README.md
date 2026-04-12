@@ -1,6 +1,6 @@
 # Tamaru
 
-A modular, self-contained JavaScript/TypeScript widget for adding a draggable, interactive trackball overlay to any web page or app. Includes built-in CSS and no external dependencies.
+A modular, self-contained JavaScript/TypeScript widget for adding a draggable, interactive trackball overlay to any web page or app. Includes built-in CSS and only 2 external dependencies (one of which is made by me, [@nisoku/satori](https://github.com/Nisoku/Satori)!).
 
 > Tamaru (たまる) is a Japanese verb meaning “to accumulate,”
 > which mirrors how the trackball builds momentum as you flick it.
