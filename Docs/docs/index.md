@@ -81,6 +81,16 @@ yarn add tamaru
 
 :::
 
+## Bookmarklet
+
+Want to use Tamaru on any website you visit? Just create a new bookmark in your browser, and set the URL to this snippet:
+
+```javascript
+javascript:(function(){if(window.Tamaru){Tamaru.initVirtualTrackball();return}var s=document.createElement('script');s.src='https://unpkg.com/tamaru@latest/dist/main.global.js';s.onload=function(){Tamaru.initVirtualTrackball()};document.head.appendChild(s);})();
+```
+
+Once saved, just click the bookmark to spawn the interactive trackball on whatever page you are reading!
+
 ## Next Steps
 
 - [Configuration](./config): Understand themes and settings

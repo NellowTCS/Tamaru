@@ -3,19 +3,19 @@
   "version": "0.1.0",
   "description": "Skeuomorphic, momentum-based virtual trackball widget for the web.",
   "license": "Apache-2.0",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/main.js",
+  "module": "dist/main.mjs",
+  "types": "dist/main.d.ts",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
+        "types": "./dist/main.d.ts",
+        "default": "./dist/main.mjs"
       },
       "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/main.d.ts",
+        "default": "./dist/main.js"
       }
     }
   },
