@@ -1,0 +1,11 @@
+{
+  "name": "Sunset",
+  "author": "NellowTCS",
+  "desc": "Dusk and sunset theme.",
+  "sphereColor": "#5f2d20",
+  "textureColor": "#c4542d",
+  "shadingLight": "rgba(255,220,170,0.62)",
+  "shadingDark": "rgba(33,12,8,0.86)",
+  "glow": "#ffb46a",
+  "miniIcon": "#ffd4ad"
+}

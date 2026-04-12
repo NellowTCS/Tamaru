@@ -14,6 +14,7 @@ let rollHiFilt: BiquadFilterNode | null = null;
 let rollShaper: WaveShaperNode | null = null;
 let rollGain: GainNode | null = null;
 let rollFadeTimer: ReturnType<typeof setTimeout> | null = null;
+let lastRollTouchAt = 0;
 
 let lastSpinAt = 0;
 let rollIsActive = false;
@@ -99,16 +100,16 @@ function ensureRollingBuf(c: AudioContext) {
   const len = Math.floor(c.sampleRate * 2.2);
   const b = c.createBuffer(1, len, c.sampleRate);
   const d = b.getChannelData(0);
-  let lp = 0,
-    hp = 0,
-    prev = 0;
+  let lp = 0;
+  let mid = 0;
+  let prevMid = 0;
   for (let i = 0; i < len; i++) {
     const w = Math.random() * 2 - 1;
-    lp = lp * 0.94 + w * 0.06;
-    const mid = w - lp;
-    hp = 0.97 * (hp + mid - prev);
-    prev = mid;
-    d[i] = mid * 0.55 + hp * 0.3 + w * 0.15;
+    lp = lp * 0.97 + w * 0.03;
+    mid = mid * 0.9 + (w - lp) * 0.1;
+    const hi = 0.95 * (prevMid - mid);
+    prevMid = mid;
+    d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
   }
   // Smooth loop seam
   const fade = Math.floor(c.sampleRate * 0.04);
@@ -265,13 +266,13 @@ function ensureRollingLayer(c: AudioContext) {
 
   rollMidFilt = c.createBiquadFilter();
   rollMidFilt.type = "bandpass";
-  rollMidFilt.frequency.value = 800;
-  rollMidFilt.Q.value = 0.6;
+  rollMidFilt.frequency.value = 620;
+  rollMidFilt.Q.value = 0.48;
 
   rollHiFilt = c.createBiquadFilter();
   rollHiFilt.type = "highshelf";
-  rollHiFilt.frequency.value = 2200;
-  rollHiFilt.gain.value = 3;
+  rollHiFilt.frequency.value = 1800;
+  rollHiFilt.gain.value = -2;
 
   rollShaper = c.createWaveShaper();
   rollShaper.curve = makeShaperCurve(5);
@@ -299,36 +300,51 @@ function setRollLevel(
   if (!rollGain || !rollMidFilt || !rollSrc) return;
   const t = c.currentTime;
   const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
+  const gainTC = Math.max(0.01, rampSec * 0.45);
+  const rateTC = Math.max(0.015, rampSec * 0.38);
+  const freqTC = Math.max(0.012, rampSec * 0.35);
 
   rollGain.gain.cancelScheduledValues(t);
   rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 0.0001), t);
-  rollGain.gain.linearRampToValueAtTime(Math.max(0.0001, scaled), t + rampSec);
+  rollGain.gain.setTargetAtTime(Math.max(0.0001, scaled), t, gainTC);
 
   rollSrc.playbackRate.cancelScheduledValues(t);
   rollSrc.playbackRate.setValueAtTime(rollSrc.playbackRate.value, t);
-  rollSrc.playbackRate.linearRampToValueAtTime(0.55 + speed * 1.1, t + rampSec);
+  rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
 
   rollMidFilt.frequency.cancelScheduledValues(t);
   rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
-  rollMidFilt.frequency.linearRampToValueAtTime(420 + speed * 980, t + rampSec);
+  rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
 }
 
 function touchRollingSound(c: AudioContext, speed: number, intensity: number) {
+  lastRollTouchAt = performance.now();
   rollIsActive = true;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   ensureRollingLayer(c);
-  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed, intensity);
+  const attackSec = 0.045 + (1 - speed) * 0.07;
+  setRollLevel(c, 1, attackSec, speed, intensity);
 
-  rollFadeTimer = setTimeout(
-    () => {
-      rollFadeTimer = null;
-      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
-    },
-    140 + Math.random() * 50,
-  );
+  const idleBeforeFadeMs = 220;
+  const scheduleFadeCheck = (delayMs: number) => {
+    rollFadeTimer = setTimeout(
+      () => {
+        const idleMs = performance.now() - lastRollTouchAt;
+        if (rollIsActive && idleMs < idleBeforeFadeMs) {
+          scheduleFadeCheck(idleBeforeFadeMs - idleMs + 20);
+          return;
+        }
+        rollFadeTimer = null;
+        if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
+      },
+      Math.max(40, delayMs),
+    );
+  };
+
+  scheduleFadeCheck(idleBeforeFadeMs);
 }
 
 function stopRollingSound(
@@ -338,13 +354,14 @@ function stopRollingSound(
   intensity: number,
 ) {
   rollIsActive = false;
+  lastRollTouchAt = 0;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   if (!rollGain) return;
 
-  const fadeOut = immediate ? 0.04 : 0.18 + (1 - speed) * 0.14;
+  const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
   setRollLevel(c, 0, fadeOut, speed, intensity);
 
   // Tear down the nodes entirely after fade

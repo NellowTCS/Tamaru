@@ -11,7 +11,7 @@ A modular, self-contained JavaScript/TypeScript widget for adding a draggable, i
 - Trackball area for scrolling (with inertia)
 - Minimize/restore toggle
 - Snap-to-edge logic
-- Theming system with multiple built-in color schemes (`default`, `aqua`, `red`, `glossy`, `metal`)
+- Theming system with multiple built-in color schemes (`default`, `aqua`, `red`, `glossy`, `metal`, `neon`, `sunset`)
 - Configurable sound and haptics feedback with naturalized mechanical variation
 - Support for different scroll modes (`page`, `nearest`, `horizontal`, `momentum`)
 - Configurable behaviors (friction, sensitivity, snap distance, roll sound level)

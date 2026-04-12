@@ -25,4 +25,23 @@ export function injectStyleTag(styles: string): void {
     style.textContent = styles;
     document.head.appendChild(style);
   }
+
+  if (!document.getElementById("vt-scrollbar-hide")) {
+    const hideStyle = document.createElement("style");
+    hideStyle.id = "vt-scrollbar-hide";
+    hideStyle.textContent = `
+      [data-vt-hide-scrollbar="1"] {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      [data-vt-hide-scrollbar="1"]::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+        background: transparent;
+      }
+    `;
+    document.head.appendChild(hideStyle);
+  }
 }

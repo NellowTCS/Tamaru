@@ -1,4 +1,11 @@
-export type TamaruTheme = "default" | "aqua" | "red" | "glossy" | "metal";
+export type TamaruTheme =
+  | "default"
+  | "aqua"
+  | "red"
+  | "glossy"
+  | "metal"
+  | "neon"
+  | "sunset";
 export type TamaruScrollMode = "page" | "nearest" | "horizontal" | "momentum";
 export type SoundEvent = "grab" | "release" | "snap" | "spin" | "stop";
 export type HapticEvent = "grab" | "release" | "snap" | "spin" | "stop";

@@ -1,6 +1,11 @@
 import { TamaruScrollMode } from "./types";
 import { snapToEdge } from "./trackball";
 
+function markScrollbarHidden(el: HTMLElement | null) {
+  if (!el) return;
+  el.setAttribute("data-vt-hide-scrollbar", "1");
+}
+
 export function doSnapToEdge(
   container: HTMLElement,
   currentLeft: number,
@@ -77,6 +82,15 @@ export function doScroll(
   }
 
   if (!scrollable) return; // nothing to scroll per policy
+
+  markScrollbarHidden(scrollable);
+  if (
+    scrollable === document.documentElement ||
+    scrollable === document.body
+  ) {
+    markScrollbarHidden(document.documentElement as HTMLElement);
+    markScrollbarHidden(document.body as HTMLElement);
+  }
 
   switch (mode) {
     case "page":

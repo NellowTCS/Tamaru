@@ -1,0 +1,11 @@
+{
+  "name": "Neon",
+  "author": "NellowTCS",
+  "desc": "Neon theme.",
+  "sphereColor": "#101a3a",
+  "textureColor": "#1f2e66",
+  "shadingLight": "rgba(120,255,250,0.72)",
+  "shadingDark": "rgba(1,7,23,0.92)",
+  "glow": "#2ffcff",
+  "miniIcon": "#6dff88"
+}
