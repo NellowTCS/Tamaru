@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/docs/assets/favicon.ico" />
   <title>Tamaru Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
@@ -39,7 +40,7 @@
       padding: 1rem 24px;
       background: #0f1720;
       border-bottom: 2px solid #2d3748;
-      border-radius:  0 0 12px 12px;
+      border-radius: 0 0 12px 12px;
     }
 
     h1 {
@@ -130,9 +131,20 @@
 
 <body>
   <header>
-    <h1>Tamaru</h1>
-    <div class="desc">Drag the widget or use the trackball. This layout natively prevents scrolling so only the
-      trackball logic can scroll the container.</div>
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+      <div>
+        <h1>Tamaru</h1>
+        <div class="desc">
+          Drag the widget or use the trackball. This layout natively prevents scrolling so only the
+          trackball logic can scroll the container.
+        </div>
+      </div>
+      <div>
+        <a href="./docs/"
+          style="white-space: nowrap; display: inline-block; padding: 8px; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px;">View
+          Documentation</a>
+      </div>
+    </div>
   </header>
 
   <div class="container">
@@ -169,8 +181,10 @@
           <tr>
             <td colspan="2" style="padding-top: 12px; border-top: 1px solid #2d3748;">
               <div style="margin-bottom: 4px;"><small><b>Custom Theme</b></small></div>
-              <label style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;"><input type="checkbox" id="cfg-enable-custom" /> <small>Enable</small></label>
-              <div style="display: grid; grid-template-columns: min-content 1fr min-content 1fr; gap: 6px 12px; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;"><input type="checkbox"
+                  id="cfg-enable-custom" /> <small>Enable</small></label>
+              <div
+                style="display: grid; grid-template-columns: min-content 1fr min-content 1fr; gap: 6px 12px; align-items: center;">
                 <input type="color" id="cfg-sphereColor" value="#0b3d6e" /> <small>sphere</small>
                 <input type="color" id="cfg-textureColor" value="#1e5ba3" /> <small>texture</small>
                 <input type="color" id="cfg-glow" value="#5cabff" /> <small>glow</small>
@@ -229,10 +243,14 @@
         <button id="cfg-destroy" style="background:#ef4444;">Destroy</button>
       </div>
     </aside>
-    <div style="flex: 1; overflow: hidden; display: flex;">
+    <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+      <div
+        style="background: #0f1720; border: 1px dashed #334155; border-right: none; color: #94a3b8; padding: 12px; text-align: center; border-radius: 12px 0 0 0; font-style: italic;">
+        Hint: Spin the widget (scroll/drag on it) to scroll this reading area!
+      </div>
       <!-- DO NOT FORMAT THIS, it's only long so that the demo works properly -->
       <main id="scroll-area" class="content-area"
-         style="overflow: hidden; white-space: pre; border-radius: 12px 0 0 12px;">
+         style="overflow: hidden; white-space: pre; border-radius: 12px 0 0 12px; border-top: none;">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas eget tortor egestas, mattis metus non, placerat enim. Mauris odio sem, sodales sed nisi ut, tincidunt iaculis enim. Integer vitae purus leo. Vestibulum egestas mauris ut elit luctus, vel pretium sapien rutrum. Proin lobortis in sem sed tincidunt. Morbi varius tincidunt erat, id euismod nisl elementum vel. Nullam dolor purus, lacinia at rhoncus sit amet, luctus vitae magna. Ut sit amet magna eget sapien interdum tristique. Sed pharetra semper lectus non facilisis. Donec pellentesque ex at sodales porta. Duis odio libero, posuere ut rutrum eget, egestas condimentum mauris. Aenean eu enim ullamcorper, dictum arcu non, semper dui. Donec diam felis, tincidunt fringilla pharetra vitae, tristique in urna. Quisque vehicula maximus cursus. Quisque sollicitudin iaculis odio ut pellentesque. Vestibulum elit odio, aliquam at purus non, convallis placerat sem.
 
 Sed vel sapien ligula. Aenean euismod ut tellus et pretium. Aliquam auctor, eros vel semper lobortis, dui metus egestas sapien, tincidunt viverra est nunc quis purus. Ut vulputate massa ac massa faucibus, pretium consectetur dolor venenatis. Vestibulum tincidunt, metus et eleifend mollis, sem nulla placerat mauris, ut interdum odio erat eget mauris. Morbi gravida porttitor felis vel volutpat. Nunc lobortis massa sit amet lacus sodales pellentesque. Suspendisse vitae nibh sed est tempus semper. Donec faucibus, enim faucibus feugiat dignissim, elit turpis tincidunt urna, eget facilisis velit lacus tincidunt diam. Sed porttitor, ante aliquam aliquam dictum, nibh sapien porta elit, a pharetra nibh erat sit amet nibh. Etiam et nunc enim. Cras rhoncus libero vitae convallis feugiat. Morbi aliquam ullamcorper imperdiet. Cras ac turpis non risus sodales vestibulum eget at massa. Lorem ipsum dolor sit amet, consectetur adipiscing elit.

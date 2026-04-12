@@ -6,7 +6,7 @@ module.exports = {
     alt: "Tamaru",
     href: "./",
   },
-  favicon: "",
+  favicon: "assets/favicon.ico",
 
   srcDir: "docs",
   outputDir: "site",
@@ -30,6 +30,7 @@ module.exports = {
     { title: "Home", path: "/", icon: "home" },
     { title: "Configuration", path: "/config", icon: "settings" },
     { title: "API Reference", path: "/api", icon: "file-code" },
+    { title: "Try the Demo", path: "/Tamaru/", icon: "play", external: true },
     {
       title: "GitHub",
       path: "https://github.com/NellowTCS/Tamaru",
@@ -42,7 +43,7 @@ module.exports = {
     seo: {
       defaultDescription: "A modular, responsive virtual trackball widget for the web.",
       openGraph: {
-        defaultImage: "",
+        defaultImage: "assets/icon.png",
       },
       twitter: {
         cardType: "summary_large_image",
