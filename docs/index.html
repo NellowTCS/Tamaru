@@ -256,7 +256,12 @@
 </code></pre>
 </div><div class="docmd-tab-pane "><pre class="hljs"><code>yarn add tamaru
 </code></pre>
-</div></div></div><h2 id="next-steps">Next Steps</h2>
+</div></div></div><h2 id="bookmarklet">Bookmarklet</h2>
+<p>Want to use Tamaru on any website you visit? Just create a new bookmark in your browser, and set the URL to this snippet:</p>
+<pre class="hljs"><code><span class="hljs-attr">javascript</span>:(<span class="hljs-keyword">function</span>(<span class="hljs-params"></span>){<span class="hljs-keyword">if</span>(<span class="hljs-variable language_">window</span>.<span class="hljs-property">Tamaru</span>){<span class="hljs-title class_">Tamaru</span>.<span class="hljs-title function_">initVirtualTrackball</span>();<span class="hljs-keyword">return</span>}<span class="hljs-keyword">var</span> s=<span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(<span class="hljs-string">&#x27;script&#x27;</span>);s.<span class="hljs-property">src</span>=<span class="hljs-string">&#x27;https://unpkg.com/tamaru@latest/dist/main.global.js&#x27;</span>;s.<span class="hljs-property">onload</span>=<span class="hljs-keyword">function</span>(<span class="hljs-params"></span>){<span class="hljs-title class_">Tamaru</span>.<span class="hljs-title function_">initVirtualTrackball</span>()};<span class="hljs-variable language_">document</span>.<span class="hljs-property">head</span>.<span class="hljs-title function_">appendChild</span>(s);})();
+</code></pre>
+<p>Once saved, just click the bookmark to spawn the interactive trackball on whatever page you are reading!</p>
+<h2 id="next-steps">Next Steps</h2>
 <ul>
 <li><a href="./config">Configuration</a>: Understand themes and settings</li>
 <li><a href="./api">API Reference</a>: Lifecycle functions and state management</li>
@@ -304,6 +309,10 @@
       
         <li class="toc-item toc-level-2">
           <a href="#installation" class="toc-link">Installation</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#bookmarklet" class="toc-link">Bookmarklet</a>
         </li>
       
         <li class="toc-item toc-level-2">
