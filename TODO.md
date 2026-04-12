@@ -2,10 +2,10 @@
 
 - [ ] Get the code library ready (aka not bad)
 - [ ] Add stick to cursor mode (minimized and not needing to go to the corner and use it to scroll, but only for desktop? or mobile for wherever scrolling... but that's just the normal scrolling) (aka replace cursor with trackball in such a way that it like feels like you're using a trackball)
-- [ ] Tweak base config until it's *perfect*
 
 ## Done
 
+- [X] Tweak base config until it's *perfect* (it's pretty good now)
 - [X] Add some logging using Satori
 - [X] Better demo (with curvomorphism, sorry i couldn't help myself)
 - [X] Custom themes (why didn't I add this before, it was so easy)
