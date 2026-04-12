@@ -8,6 +8,7 @@ var styles_default = `#vt-widget-container {
     align-items: center;
     justify-content: center;
     user-select: none;
+    pointer-events: none;
     transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), width 0.3s ease, height 0.3s ease;
 }
 
@@ -26,6 +27,14 @@ var styles_default = `#vt-widget-container {
     transition: opacity 0.2s, transform 0.2s;
     pointer-events: none;
     z-index: 20;
+}
+
+#vt-trackball-area,
+#vt-controls,
+#vt-controls .vt-btn,
+#vt-viewport,
+#vt-mini-icon {
+    pointer-events: auto;
 }
 
 #vt-controls.vt-controls-visible {
@@ -467,8 +476,14 @@ function triggerHaptic2(event) {
     stop: 30
   };
   const p = patterns[event];
-  if (typeof p === "number") triggerHaptic(p);
-  else triggerHaptic(p[0]);
+  const duration = typeof p === "number" ? p : p[0];
+  try {
+    triggerHaptic(duration);
+  } catch {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(duration);
+    }
+  }
 }
 
 // src/sound.ts
@@ -699,10 +714,10 @@ function ensureRollingLayer(c) {
   rollGain.connect(out());
   rollSrc.start();
 }
-function setRollLevel(c, level, rampSec, speed) {
+function setRollLevel(c, level, rampSec, speed, intensity) {
   if (!rollGain || !rollMidFilt || !rollSrc) return;
   const t = c.currentTime;
-  const scaled = clamp01(level) * (0.032 + speed * 0.068);
+  const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
   rollGain.gain.cancelScheduledValues(t);
   rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 1e-4), t);
   rollGain.gain.linearRampToValueAtTime(Math.max(1e-4, scaled), t + rampSec);
@@ -713,23 +728,23 @@ function setRollLevel(c, level, rampSec, speed) {
   rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
   rollMidFilt.frequency.linearRampToValueAtTime(420 + speed * 980, t + rampSec);
 }
-function touchRollingSound(c, speed) {
+function touchRollingSound(c, speed, intensity) {
   rollIsActive = true;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   ensureRollingLayer(c);
-  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed);
+  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed, intensity);
   rollFadeTimer = setTimeout(
     () => {
       rollFadeTimer = null;
-      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed);
+      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
     },
     140 + Math.random() * 50
   );
 }
-function stopRollingSound(c, speed, immediate) {
+function stopRollingSound(c, speed, immediate, intensity) {
   rollIsActive = false;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
@@ -737,7 +752,7 @@ function stopRollingSound(c, speed, immediate) {
   }
   if (!rollGain) return;
   const fadeOut = immediate ? 0.04 : 0.18 + (1 - speed) * 0.14;
-  setRollLevel(c, 0, fadeOut, speed);
+  setRollLevel(c, 0, fadeOut, speed, intensity);
   const silenceMs = (fadeOut + 0.1) * 1e3;
   setTimeout(() => {
     if (!rollIsActive) teardownRollNodes();
@@ -768,7 +783,7 @@ function playSound(event, config, options) {
     const rollScale = clamp01(config?.rollSoundLevel ?? 1);
     const speed = normSpeed(options?.speed);
     if (event === "spin") {
-      touchRollingSound(c, speed);
+      touchRollingSound(c, speed, rollScale);
       const now = performance.now();
       const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
       if (now - lastSpinAt < minGap) return;
@@ -780,7 +795,7 @@ function playSound(event, config, options) {
         break;
       case "release":
         playReleaseSound(c, t);
-        stopRollingSound(c, speed, true);
+        stopRollingSound(c, speed, true, rollScale);
         break;
       case "snap":
         playSnapSound(c, t);
@@ -790,7 +805,7 @@ function playSound(event, config, options) {
         break;
       case "stop":
         playStopSound(c, t, speed);
-        stopRollingSound(c, speed, false);
+        stopRollingSound(c, speed, false, rollScale);
         break;
     }
   } catch {
@@ -851,6 +866,7 @@ var tamaruPaused = false;
 var tamaruConfig = null;
 var tamaruState = null;
 var lastPointerSpinFeedbackAt = 0;
+var cleanupVisibilityHandlers = null;
 function applyThemeVars(vars) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
@@ -916,30 +932,27 @@ function initVirtualTrackball(config) {
   const trackballArea = container.querySelector(
     "#vt-trackball-area"
   );
-  toggleBtn.addEventListener("click", () => {
-    const isMini = !container.classList.contains("vt-mini");
-    container.classList.toggle("vt-mini");
-    toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
+  const setWidgetSize = (sizePx) => {
+    container.style.width = sizePx + "px";
+    container.style.height = sizePx + "px";
+    trackballArea.style.width = sizePx + "px";
+    trackballArea.style.height = sizePx + "px";
+  };
+  const applyMiniState = (mini) => {
     const size = tamaruConfig ? tamaruConfig.size : 120;
-    if (isMini) {
-      const miniSize = Math.max(40, Math.round(size * 0.4));
-      container.style.width = miniSize + "px";
-      container.style.height = miniSize + "px";
-      trackballArea.style.width = miniSize + "px";
-      trackballArea.style.height = miniSize + "px";
-    } else {
-      container.style.width = size + "px";
-      container.style.height = size + "px";
-      trackballArea.style.width = size + "px";
-      trackballArea.style.height = size + "px";
-    }
+    const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
+    container.classList.toggle("vt-mini", mini);
+    toggleBtn.textContent = mini ? "+" : "-";
+    setWidgetSize(targetSize);
     snapToEdgeHandler();
+  };
+  toggleBtn.addEventListener("click", () => {
+    const nextMini = !container.classList.contains("vt-mini");
+    applyMiniState(nextMini);
   });
   trackballArea.addEventListener("click", () => {
     if (container.classList.contains("vt-mini")) {
-      container.classList.remove("vt-mini");
-      toggleBtn.textContent = "-";
-      snapToEdgeHandler();
+      applyMiniState(false);
     }
   });
   const viewport = container.querySelector("#vt-viewport");
@@ -1021,16 +1034,38 @@ function initVirtualTrackball(config) {
     (event, speed) => feedback(event, tamaruConfig, { speed })
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
+  const stopInertiaAndRolling = () => {
+    if (!tamaruState || !tamaruConfig) return;
+    const speed = Math.hypot(tamaruState.velX || 0, tamaruState.velY || 0);
+    tamaruState.velX = 0;
+    tamaruState.velY = 0;
+    if (speed > 0.05) {
+      feedback("stop", tamaruConfig, { speed });
+    }
+  };
+  const onVisibilityChange = () => {
+    if (document.hidden) stopInertiaAndRolling();
+  };
+  const onWindowBlur = () => {
+    stopInertiaAndRolling();
+  };
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("blur", onWindowBlur);
+  cleanupVisibilityHandlers = () => {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("blur", onWindowBlur);
+    cleanupVisibilityHandlers = null;
+  };
   const controls = container.querySelector("#vt-controls");
   let controlsHideTimeout = null;
-  container.addEventListener("mouseenter", () => {
+  trackballArea.addEventListener("mouseenter", () => {
     controlsHideTimeout = showControls(
       controls,
       controlsHideTimeout,
       setControlsVisible
     );
   });
-  container.addEventListener("mouseleave", () => {
+  trackballArea.addEventListener("mouseleave", () => {
     controlsHideTimeout = hideControlsWithDelay(
       container,
       controls,
@@ -1098,6 +1133,7 @@ function updateVirtualTrackballConfig(newConfig) {
 }
 function destroyVirtualTrackball() {
   if (!tamaruContainer) return;
+  cleanupVisibilityHandlers?.();
   if (tamaruAnimationFrame !== null) {
     cancelAnimationFrame(tamaruAnimationFrame);
     tamaruAnimationFrame = null;
