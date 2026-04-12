@@ -23,9 +23,6 @@ __export(main_exports, {
   destroyVirtualTrackball: () => destroyVirtualTrackball,
   hideVirtualTrackball: () => hideVirtualTrackball,
   initVirtualTrackball: () => initVirtualTrackball,
-  pauseVirtualTrackball: () => pauseVirtualTrackball,
-  resumeVirtualTrackball: () => resumeVirtualTrackball,
-  showVirtualTrackball: () => showVirtualTrackball,
   updateVirtualTrackballConfig: () => updateVirtualTrackballConfig
 });
 module.exports = __toCommonJS(main_exports);
@@ -47,7 +44,7 @@ var M = class {
     if (!this.config.enabled)
       return { allowed: true, sampled: false };
     const t = Date.now();
-    if (this.eventTimestamps = this.eventTimestamps.filter((r2) => t - r2 < 1e3), this.eventTimestamps.length < this.config.maxEventsPerSecond)
+    if (this.eventTimestamps = this.eventTimestamps.filter((r) => t - r < 1e3), this.eventTimestamps.length < this.config.maxEventsPerSecond)
       return this.eventTimestamps.push(t), { allowed: true, sampled: false };
     switch (this.config.strategy) {
       case "drop":
@@ -104,10 +101,10 @@ function g(s, e, t = /* @__PURE__ */ new WeakMap()) {
     return Number.isNaN(s) && Number.isNaN(e) ? true : s === e;
   if (s === null || e === null || s === void 0 || e === void 0) return s === e;
   if (typeof s != typeof e || typeof s != "object") return false;
-  const i = s, r2 = e;
+  const i = s, r = e;
   if (t.has(i))
-    return t.get(i) === r2;
-  if (t.set(i, r2), s instanceof Date && e instanceof Date)
+    return t.get(i) === r;
+  if (t.set(i, r), s instanceof Date && e instanceof Date)
     return s.getTime() === e.getTime();
   if (s instanceof Date || e instanceof Date) return false;
   if (s instanceof RegExp && e instanceof RegExp)
@@ -168,36 +165,36 @@ function p(s, e = /* @__PURE__ */ new WeakMap()) {
   if (s instanceof RegExp)
     return new RegExp(s.source, s.flags);
   if (s instanceof Map) {
-    const r2 = /* @__PURE__ */ new Map();
-    e.set(t, r2);
+    const r = /* @__PURE__ */ new Map();
+    e.set(t, r);
     for (const [n, o] of s)
-      r2.set(p(n, e), p(o, e));
-    return r2;
+      r.set(p(n, e), p(o, e));
+    return r;
   }
   if (s instanceof Set) {
-    const r2 = /* @__PURE__ */ new Set();
-    e.set(t, r2);
+    const r = /* @__PURE__ */ new Set();
+    e.set(t, r);
     for (const n of s)
-      r2.add(p(n, e));
-    return r2;
+      r.add(p(n, e));
+    return r;
   }
   if (Array.isArray(s)) {
-    const r2 = [];
-    e.set(t, r2);
+    const r = [];
+    e.set(t, r);
     for (let n = 0; n < s.length; n++)
-      Object.prototype.hasOwnProperty.call(s, n) && (r2[n] = p(s[n], e));
+      Object.prototype.hasOwnProperty.call(s, n) && (r[n] = p(s[n], e));
     for (const n of Object.keys(s))
-      /^\d+$/.test(n) || (r2[n] = p(s[n], e));
-    return r2;
+      /^\d+$/.test(n) || (r[n] = p(s[n], e));
+    return r;
   }
   const i = {};
   e.set(t, i);
-  for (const r2 of Object.keys(s))
-    i[r2] = p(s[r2], e);
+  for (const r of Object.keys(s))
+    i[r] = p(s[r], e);
   return i;
 }
 function b(s, e = /* @__PURE__ */ new WeakSet()) {
-  return s === null ? "null" : s === void 0 ? "undefined" : typeof s == "string" ? `s:${s}` : typeof s == "number" ? Number.isNaN(s) ? "n:NaN" : `n:${s}` : typeof s == "boolean" ? `b:${s}` : typeof s != "object" ? String(s) : e.has(s) ? "[Circular]" : (e.add(s), s instanceof Date ? `d:${s.getTime()}` : s instanceof RegExp ? `r:${s.source}:${s.flags}` : s instanceof Map ? `m:{${Array.from(s.entries()).map(([r2, n]) => `${b(r2, e)}=>${b(n, e)}`).sort().join(",")}}` : s instanceof Set ? `set:{${Array.from(s).map((r2) => b(r2, e)).sort().join(",")}}` : Array.isArray(s) ? `a:[${s.map((r2, n) => Object.prototype.hasOwnProperty.call(s, n) ? b(r2, e) : "<empty>").join(",")}]` : `o:{${Object.entries(s).sort(([i], [r2]) => i.localeCompare(r2)).map(([i, r2]) => `${i}:${b(r2, e)}`).join(",")}}`);
+  return s === null ? "null" : s === void 0 ? "undefined" : typeof s == "string" ? `s:${s}` : typeof s == "number" ? Number.isNaN(s) ? "n:NaN" : `n:${s}` : typeof s == "boolean" ? `b:${s}` : typeof s != "object" ? String(s) : e.has(s) ? "[Circular]" : (e.add(s), s instanceof Date ? `d:${s.getTime()}` : s instanceof RegExp ? `r:${s.source}:${s.flags}` : s instanceof Map ? `m:{${Array.from(s.entries()).map(([r, n]) => `${b(r, e)}=>${b(n, e)}`).sort().join(",")}}` : s instanceof Set ? `set:{${Array.from(s).map((r) => b(r, e)).sort().join(",")}}` : Array.isArray(s) ? `a:[${s.map((r, n) => Object.prototype.hasOwnProperty.call(s, n) ? b(r, e) : "<empty>").join(",")}]` : `o:{${Object.entries(s).sort(([i], [r]) => i.localeCompare(r)).map(([i, r]) => `${i}:${b(r, e)}`).join(",")}}`);
 }
 var F = class {
   constructor(e) {
@@ -239,8 +236,8 @@ var F = class {
       return { isDuplicate: false, duplicateCount: 0 };
     const t = Date.now(), i = this.computeDedupKey(e);
     this.cleanExpired(t);
-    const r2 = this.cache.get(i);
-    return r2 && t - r2.timestamp < this.config.windowMs ? (r2.count++, this.deduplicatedCount++, { isDuplicate: true, duplicateCount: r2.count }) : (this.cache.set(i, {
+    const r = this.cache.get(i);
+    return r && t - r.timestamp < this.config.windowMs ? (r.count++, this.deduplicatedCount++, { isDuplicate: true, duplicateCount: r.count }) : (this.cache.set(i, {
       hash: i,
       timestamp: t,
       count: 1
@@ -258,8 +255,8 @@ var F = class {
    */
   evictOldest() {
     let e = null, t = 1 / 0;
-    for (const [i, r2] of this.cache.entries())
-      r2.timestamp < t && (t = r2.timestamp, e = i);
+    for (const [i, r] of this.cache.entries())
+      r.timestamp < t && (t = r.timestamp, e = i);
     e && this.cache.delete(e);
   }
   /**
@@ -636,8 +633,8 @@ var R = class {
         this.subscribers.forEach((n) => n(e)), this.addToBuffer(e);
         return;
       }
-      const r2 = this.middleware[t];
-      t++, r2(e, i);
+      const r = this.middleware[t];
+      t++, r(e, i);
     };
     i();
   }
@@ -705,9 +702,9 @@ function j(s = 2) {
     const i = e.split(`
 `)[s];
     if (!i) return;
-    const r2 = i.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || i.match(/at\s+(.+?):(\d+):(\d+)/);
-    if (r2) {
-      const [, n, o, a, f] = r2;
+    const r = i.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || i.match(/at\s+(.+?):(\d+):(\d+)/);
+    if (r) {
+      const [, n, o, a, f] = r;
       return `${o}:${a}:${f}${n ? ` (${n})` : ""}`;
     }
     return i.trim();
@@ -762,9 +759,9 @@ function _(s) {
     return;
   const e = {};
   for (let t = 0; t < s.stateSelectors.length; t++) {
-    const i = s.stateSelectors[t], r2 = typeof i == "function" ? i : i.selector, n = typeof i == "function" ? `selector_${t}` : i.name || `selector_${t}`;
+    const i = s.stateSelectors[t], r = typeof i == "function" ? i : i.selector, n = typeof i == "function" ? `selector_${t}` : i.name || `selector_${t}`;
     try {
-      const o = r2();
+      const o = r();
       o != null && (e[n] = p(o));
     } catch (o) {
       e[`${n}_error`] = o instanceof Error ? o.message : String(o);
@@ -781,7 +778,7 @@ var W = class {
    * Add a new event to the causal graph
    */
   addEvent(e, t, i) {
-    const r2 = {
+    const r = {
       eventId: e,
       scope: t,
       timestamp: Date.now(),
@@ -793,7 +790,7 @@ var W = class {
         const o = this.nodes.get(n);
         o && o.effects.push(e);
       }
-    this.nodes.set(e, r2), this.scopeLastEvent.set(t, e), this.globalLastEvent = e, this.nodes.size > this.maxNodes && this.pruneOldest(Math.floor(this.maxNodes * 0.1));
+    this.nodes.set(e, r), this.scopeLastEvent.set(t, e), this.globalLastEvent = e, this.nodes.size > this.maxNodes && this.pruneOldest(Math.floor(this.maxNodes * 0.1));
   }
   /**
    * Get the causal link for a new event
@@ -805,9 +802,9 @@ var W = class {
    * Get all causes (direct and transitive) for an event
    */
   getCauses(e, t = 1 / 0) {
-    const i = /* @__PURE__ */ new Set(), r2 = /* @__PURE__ */ new Set(), n = (o, a) => {
-      if (r2.has(o) || a > t) return;
-      r2.add(o);
+    const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
+      if (r.has(o) || a > t) return;
+      r.add(o);
       const f = this.nodes.get(o);
       if (f)
         for (const c of f.causes)
@@ -819,9 +816,9 @@ var W = class {
    * Get all effects (direct and transitive) for an event
    */
   getEffects(e, t = 1 / 0) {
-    const i = /* @__PURE__ */ new Set(), r2 = /* @__PURE__ */ new Set(), n = (o, a) => {
-      if (r2.has(o) || a > t) return;
-      r2.add(o);
+    const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
+      if (r.has(o) || a > t) return;
+      r.add(o);
       const f = this.nodes.get(o);
       if (f)
         for (const c of f.effects)
@@ -835,9 +832,9 @@ var W = class {
   getCausalChain(e) {
     const t = [];
     let i = e;
-    const r2 = /* @__PURE__ */ new Set();
-    for (; i && !r2.has(i); ) {
-      r2.add(i), t.unshift(i);
+    const r = /* @__PURE__ */ new Set();
+    for (; i && !r.has(i); ) {
+      r.add(i), t.unshift(i);
       const n = this.nodes.get(i);
       if (!n || n.causes.length === 0) break;
       i = n.causes[0];
@@ -854,31 +851,31 @@ var W = class {
    * Check if two events are causally related
    */
   areCausallyRelated(e, t) {
-    const i = this.getCauses(e), r2 = this.getEffects(e);
-    return i.includes(t) || r2.includes(t);
+    const i = this.getCauses(e), r = this.getEffects(e);
+    return i.includes(t) || r.includes(t);
   }
   /**
    * Get events in the same scope
    */
   getEventsByScope(e) {
     const t = [];
-    for (const [i, r2] of this.nodes)
-      r2.scope === e && t.push(i);
+    for (const [i, r] of this.nodes)
+      r.scope === e && t.push(i);
     return t;
   }
   /**
    * Prune oldest nodes to stay within memory limits
    */
   pruneOldest(e) {
-    const t = Array.from(this.nodes.entries()).sort(([, i], [, r2]) => i.timestamp - r2.timestamp).slice(0, e);
+    const t = Array.from(this.nodes.entries()).sort(([, i], [, r]) => i.timestamp - r.timestamp).slice(0, e);
     for (const [i] of t) {
-      const r2 = this.nodes.get(i);
-      if (r2) {
-        for (const n of r2.causes) {
+      const r = this.nodes.get(i);
+      if (r) {
+        for (const n of r.causes) {
           const o = this.nodes.get(n);
           o && (o.effects = o.effects.filter((a) => a !== i));
         }
-        for (const n of r2.effects) {
+        for (const n of r.effects) {
           const o = this.nodes.get(n);
           o && (o.causes = o.causes.filter((a) => a !== i));
         }
@@ -897,8 +894,8 @@ var W = class {
    */
   getStats() {
     let e = 0, t = 0;
-    for (const r2 of this.nodes.values())
-      e += r2.causes.length, t += r2.effects.length;
+    for (const r of this.nodes.values())
+      e += r.causes.length, t += r.effects.length;
     const i = this.nodes.size || 1;
     return {
       nodeCount: this.nodes.size,
@@ -916,9 +913,9 @@ function H(s, e, t) {
   m.addEvent(e, s, t), x.set(s, e);
 }
 function G(s, e, t) {
-  const i = O(), r2 = z(), n = [...s.inheritedTags || [], ...s.options?.tags || []], o = {
+  const i = O(), r = z(), n = [...s.inheritedTags || [], ...s.options?.tags || []], o = {
     id: i,
-    timestamp: r2,
+    timestamp: r,
     level: s.level,
     scope: s.scope,
     message: s.message,
@@ -969,9 +966,9 @@ var U = class {
   watch(e, t) {
     if (this.disposed)
       throw new Error("WatcherEngine has been disposed");
-    const i = this.generateId(), r2 = typeof e == "function" ? e : () => e, n = {
+    const i = this.generateId(), r = typeof e == "function" ? e : () => e, n = {
       id: i,
-      getValue: r2,
+      getValue: r,
       label: t,
       lastValue: void 0,
       errorCount: 0,
@@ -980,7 +977,7 @@ var U = class {
       if (!(n.disposed || this.disposed))
         try {
           this.circuitBreaker.executeSync(() => {
-            const f = r2();
+            const f = r();
             if (!g(f, n.lastValue)) {
               const c = t || `watch_${i}`;
               let l;
@@ -1026,8 +1023,8 @@ var U = class {
   when(e, t, i) {
     if (this.disposed)
       throw new Error("WatcherEngine has been disposed");
-    const r2 = this.generateId(), n = typeof e == "function" ? e : () => e, o = {
-      id: r2,
+    const r = this.generateId(), n = typeof e == "function" ? e : () => e, o = {
+      id: r,
       getValue: n,
       predicate: t,
       onTrigger: i,
@@ -1044,7 +1041,7 @@ var U = class {
           });
         } catch (c) {
           o.errorCount++, (o.errorCount <= 3 || o.errorCount % 10 === 0) && this.logger.error(
-            `When condition error for ${r2} (count: ${o.errorCount})`,
+            `When condition error for ${r} (count: ${o.errorCount})`,
             {
               tags: ["when", "error"],
               state: {
@@ -1052,15 +1049,15 @@ var U = class {
               }
             }
           ), o.errorCount >= 50 && (this.logger.error(
-            `When handler ${r2} disposed due to repeated errors`,
+            `When handler ${r} disposed due to repeated errors`,
             {
               tags: ["when", "error", "auto-disposed"]
             }
-          ), this.disposeWhenHandler(r2));
+          ), this.disposeWhenHandler(r));
         }
     }, this.config.pollingInterval || 250);
-    return o.intervalId = f, this.whenHandlers.set(r2, o), {
-      dispose: () => this.disposeWhenHandler(r2)
+    return o.intervalId = f, this.whenHandlers.set(r, o), {
+      dispose: () => this.disposeWhenHandler(r)
     };
   }
   disposeWatcher(e) {
@@ -1113,8 +1110,8 @@ var q = {
   error: 3
 };
 var v = class _v {
-  constructor(e, t, i, r2) {
-    if (this.scope = e, this.config = t, this.bus = i, this.lastEventId = r2, this.watcherEngine = new U(this, t), this.levelSeverities = { ...q }, t.customLevels)
+  constructor(e, t, i, r) {
+    if (this.scope = e, this.config = t, this.bus = i, this.lastEventId = r, this.watcherEngine = new U(this, t), this.levelSeverities = { ...q }, t.customLevels)
       for (const n of t.customLevels)
         this.levelSeverities[n.name] = n.severity;
   }
@@ -1150,7 +1147,7 @@ var v = class _v {
       return;
     }
     e in this.levelSeverities || (console.warn(`Unknown log level: ${e}, defaulting to info`), e = "info");
-    const r2 = this.config.logLevel || "info", n = this.levelSeverities[r2] ?? 1;
+    const r = this.config.logLevel || "info", n = this.levelSeverities[r] ?? 1;
     if ((this.levelSeverities[e] ?? 1) < n)
       return;
     const a = G(
@@ -1222,8 +1219,8 @@ var v = class _v {
 var S = ["debug", "info", "warn", "error"];
 function D(s) {
   const e = [], t = [];
-  if (s.enableCallsite !== void 0 && typeof s.enableCallsite != "boolean" && e.push("enableCallsite must be a boolean"), s.enableEnvInfo !== void 0 && typeof s.enableEnvInfo != "boolean" && e.push("enableEnvInfo must be a boolean"), s.enableStateSnapshot !== void 0 && typeof s.enableStateSnapshot != "boolean" && e.push("enableStateSnapshot must be a boolean"), s.enableCausalLinks !== void 0 && typeof s.enableCausalLinks != "boolean" && e.push("enableCausalLinks must be a boolean"), s.stateSelectors !== void 0 && (Array.isArray(s.stateSelectors) ? s.stateSelectors.forEach((i, r2) => {
-    typeof i != "function" && e.push(`stateSelectors[${r2}] must be a function`);
+  if (s.enableCallsite !== void 0 && typeof s.enableCallsite != "boolean" && e.push("enableCallsite must be a boolean"), s.enableEnvInfo !== void 0 && typeof s.enableEnvInfo != "boolean" && e.push("enableEnvInfo must be a boolean"), s.enableStateSnapshot !== void 0 && typeof s.enableStateSnapshot != "boolean" && e.push("enableStateSnapshot must be a boolean"), s.enableCausalLinks !== void 0 && typeof s.enableCausalLinks != "boolean" && e.push("enableCausalLinks must be a boolean"), s.stateSelectors !== void 0 && (Array.isArray(s.stateSelectors) ? s.stateSelectors.forEach((i, r) => {
+    typeof i != "function" && e.push(`stateSelectors[${r}] must be a function`);
   }) : e.push("stateSelectors must be an array")), s.maxBufferSize !== void 0 && (typeof s.maxBufferSize != "number" ? e.push("maxBufferSize must be a number") : s.maxBufferSize < 1 ? e.push("maxBufferSize must be at least 1") : s.maxBufferSize > 1e5 && t.push(
     "maxBufferSize is very large (>100000), this may cause memory issues"
   )), s.logLevel !== void 0 && (S.includes(s.logLevel) || e.push(`logLevel must be one of: ${S.join(", ")}`)), s.appVersion !== void 0 && typeof s.appVersion != "string" && e.push("appVersion must be a string"), s.pollingInterval !== void 0 && (typeof s.pollingInterval != "number" ? e.push("pollingInterval must be a number") : s.pollingInterval < 10 ? e.push("pollingInterval must be at least 10ms") : s.pollingInterval < 50 && t.push(
@@ -1244,10 +1241,10 @@ function D(s) {
         if (!Array.isArray(i.fields))
           e.push("deduplication.fields must be an array");
         else {
-          const r2 = ["message", "scope", "level", "tags", "state"];
+          const r = ["message", "scope", "level", "tags", "state"];
           i.fields.forEach((n, o) => {
-            typeof n != "string" ? e.push(`deduplication.fields[${o}] must be a string`) : r2.includes(n) || e.push(
-              `deduplication.fields[${o}] "${n}" is not a valid field. Valid fields: ${r2.join(", ")}`
+            typeof n != "string" ? e.push(`deduplication.fields[${o}] must be a string`) : r.includes(n) || e.push(
+              `deduplication.fields[${o}] "${n}" is not a valid field. Valid fields: ${r.join(", ")}`
             );
           });
         }
@@ -1256,11 +1253,11 @@ function D(s) {
     if (!Array.isArray(s.customLevels))
       e.push("customLevels must be an array");
     else {
-      const i = /* @__PURE__ */ new Set(), r2 = ["log", "event"];
+      const i = /* @__PURE__ */ new Set(), r = ["log", "event"];
       s.customLevels.forEach((n, o) => {
         typeof n.name != "string" || n.name.trim() === "" ? e.push(`customLevels[${o}].name must be a non-empty string`) : (i.has(n.name) && e.push(
           `customLevels[${o}].name "${n.name}" is a duplicate`
-        ), i.add(n.name), r2.includes(n.name.toLowerCase()) && e.push(
+        ), i.add(n.name), r.includes(n.name.toLowerCase()) && e.push(
           `customLevels[${o}].name "${n.name}" is a reserved method name`
         ), S.includes(n.name) && t.push(
           `customLevels[${o}].name "${n.name}" shadows a built-in level`
@@ -1836,7 +1833,24 @@ function isElementScrollable(el) {
   }
   return false;
 }
+var cachedScrollableElements = null;
+var domObserver = null;
+function clearScrollableCache() {
+  cachedScrollableElements = null;
+}
 function getAllScrollableElements() {
+  if (cachedScrollableElements) {
+    return cachedScrollableElements;
+  }
+  if (!domObserver && typeof window !== "undefined") {
+    domObserver = new MutationObserver(clearScrollableCache);
+    domObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"]
+    });
+  }
   const elements = document.querySelectorAll("*");
   const scrollableElements = [];
   elements.forEach((el) => {
@@ -1844,6 +1858,7 @@ function getAllScrollableElements() {
       scrollableElements.push(el);
     }
   });
+  cachedScrollableElements = scrollableElements;
   return scrollableElements;
 }
 function cycleScrollableTarget(dx, dy, currentTarget) {
@@ -2075,347 +2090,447 @@ function triggerHaptic2(event) {
 }
 
 // src/sound.ts
-var audioCtx = null;
-var masterGain = null;
-var compressor = null;
-var noiseBuf = null;
-var rollingBuf = null;
-var rollSrc = null;
-var rollMidFilt = null;
-var rollHiFilt = null;
-var rollShaper = null;
-var rollGain = null;
-var rollFadeTimer = null;
-var lastRollTouchAt = 0;
-var lastSpinAt = 0;
-var rollIsActive = false;
 var SPIN_MIN_INTERVAL_MS = 22;
 var SOUND_VAR = 0.12;
-function getAudioContext() {
-  if (typeof window === "undefined") return null;
-  if (!audioCtx) {
-    const w = window;
-    const Ctor = globalThis.AudioContext || w.webkitAudioContext;
-    if (!Ctor) return null;
-    const c = new Ctor();
-    audioCtx = c;
-    compressor = c.createDynamicsCompressor();
-    compressor.threshold.value = -18;
-    compressor.knee.value = 24;
-    compressor.ratio.value = 4;
-    compressor.attack.value = 3e-3;
-    compressor.release.value = 0.22;
-    masterGain = c.createGain();
-    masterGain.gain.value = 0.42;
-    compressor.connect(masterGain);
-    masterGain.connect(c.destination);
-  }
-  return audioCtx;
-}
-function out() {
-  return compressor;
-}
-function r(v2, amt = SOUND_VAR) {
-  return v2 * (1 + (Math.random() - 0.5) * 2 * amt);
-}
-function jt(t, s = 2e-3) {
-  return t + (Math.random() - 0.5) * s;
-}
-function clamp01(v2) {
-  return Math.max(0, Math.min(1, v2));
-}
-function normSpeed(s) {
-  return clamp01((s ?? 10) / 18);
-}
-function makeShaperCurve(amount) {
-  const n = 256, curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x2 = i * 2 / n - 1;
-    curve[i] = (Math.PI + amount) * x2 / (Math.PI + amount * Math.abs(x2));
-  }
-  return curve;
-}
-function ensureNoiseBuf(c) {
-  if (noiseBuf) return noiseBuf;
-  const len = Math.floor(c.sampleRate * 0.5);
-  const b2 = c.createBuffer(1, len, c.sampleRate);
-  const d = b2.getChannelData(0);
-  let lp = 0;
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1;
-    lp = lp * 0.85 + w * 0.15;
-    d[i] = w * 0.6 + lp * 0.4;
-  }
-  noiseBuf = b2;
-  return b2;
-}
-function ensureRollingBuf(c) {
-  if (rollingBuf) return rollingBuf;
-  const len = Math.floor(c.sampleRate * 2.2);
-  const b2 = c.createBuffer(1, len, c.sampleRate);
-  const d = b2.getChannelData(0);
-  let lp = 0;
-  let mid = 0;
-  let prevMid = 0;
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1;
-    lp = lp * 0.97 + w * 0.03;
-    mid = mid * 0.9 + (w - lp) * 0.1;
-    const hi = 0.95 * (prevMid - mid);
-    prevMid = mid;
-    d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
-  }
-  const fade = Math.floor(c.sampleRate * 0.04);
-  for (let i = 0; i < fade; i++) {
-    const t = i / fade;
-    d[i] *= t;
-    d[len - 1 - i] *= t;
-  }
-  rollingBuf = b2;
-  return b2;
-}
-function env(g2, t, peak, dur, atk = 3e-3) {
-  g2.gain.setValueAtTime(1e-4, t);
-  g2.gain.linearRampToValueAtTime(peak, t + atk);
-  g2.gain.exponentialRampToValueAtTime(1e-4, t + dur);
-}
-function noiseBurst(c, t, dur, peak, ftype, freq, q2 = 0.9) {
-  const src = c.createBufferSource();
-  src.buffer = ensureNoiseBuf(c);
-  const f = c.createBiquadFilter();
-  f.type = ftype;
-  f.frequency.value = freq;
-  f.Q.value = q2;
-  const g2 = c.createGain();
-  env(g2, t, peak, dur);
-  src.connect(f);
-  f.connect(g2);
-  g2.connect(out());
-  src.start(t);
-  src.stop(t + dur + 0.02);
-}
-function toneBurst(c, t, dur, peak, type, f0, f1) {
-  const osc = c.createOscillator(), g2 = c.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(f0, t);
-  if (f1 != null)
-    osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-  env(g2, t, peak, dur, 4e-3);
-  osc.connect(g2);
-  g2.connect(out());
-  osc.start(t);
-  osc.stop(t + dur + 0.02);
-}
-function playGrabSound(c, t) {
-  noiseBurst(c, t, r(6e-3), r(0.22), "highpass", r(3200), r(0.6));
-  noiseBurst(c, t + 3e-3, r(0.045), r(0.12), "bandpass", r(680), r(0.7));
-  toneBurst(c, jt(t, 1e-3), r(0.075), r(0.07), "sine", r(145), r(90));
-  noiseBurst(c, t + 8e-3, r(0.06), r(0.055), "lowpass", r(280), r(0.5));
-}
-function playReleaseSound(c, t) {
-  noiseBurst(c, t, r(5e-3), r(0.15), "highpass", r(2800), r(0.55));
-  noiseBurst(c, t + 3e-3, r(0.032), r(0.085), "bandpass", r(600), r(0.65));
-  toneBurst(c, jt(t, 1e-3), r(0.06), r(0.04), "sine", r(130), r(80));
-}
-function playSnapSound(c, t) {
-  noiseBurst(c, t, r(4e-3), r(0.35), "highpass", r(5e3), r(0.5));
-  noiseBurst(c, t + 1e-3, r(0.018), r(0.22), "bandpass", r(1800), r(1.1));
-  toneBurst(c, jt(t, 5e-4), r(0.055), r(0.11), "triangle", r(380), r(160));
-  noiseBurst(c, t + 0.012, r(0.022), r(0.09), "bandpass", r(1100), r(0.8));
-}
-function playSpinTick(c, t, speed) {
-  const fc = 380 + speed * 560 + (Math.random() - 0.5) * 180;
-  const pk = 0.028 + speed * 0.038;
-  noiseBurst(c, t, r(9e-3), r(pk), "bandpass", fc, r(1.4));
-  if (Math.random() < 0.35) {
-    toneBurst(
-      c,
-      jt(t, 1e-3),
-      r(0.012),
-      r(0.012),
-      "sine",
-      r(200 + speed * 120)
-    );
-  }
-}
-function playStopSound(c, t, speed) {
-  const dur = 0.08 + speed * 0.18;
-  noiseBurst(
-    c,
-    t,
-    r(dur * 0.6),
-    r(0.08 + speed * 0.06),
-    "bandpass",
-    r(320 + speed * 140),
-    r(0.7)
-  );
-  toneBurst(
-    c,
-    jt(t, 2e-3),
-    r(dur * 0.9),
-    r(0.055),
-    "sine",
-    r(95 + speed * 55),
-    r(35)
-  );
-  noiseBurst(
-    c,
-    t + dur * 0.3,
-    r(dur * 0.5),
-    r(0.035),
-    "lowpass",
-    r(180),
-    r(0.45)
-  );
-  if (speed > 0.4) {
-    noiseBurst(
-      c,
-      t + dur * 0.55,
-      r(dur * 0.35),
-      r(0.02),
-      "bandpass",
-      r(260),
-      r(0.6)
-    );
-  }
-}
-function ensureRollingLayer(c) {
-  if (rollSrc) return;
-  rollSrc = c.createBufferSource();
-  rollSrc.buffer = ensureRollingBuf(c);
-  rollSrc.loop = true;
-  rollSrc.playbackRate.value = 1;
-  rollMidFilt = c.createBiquadFilter();
-  rollMidFilt.type = "bandpass";
-  rollMidFilt.frequency.value = 620;
-  rollMidFilt.Q.value = 0.48;
-  rollHiFilt = c.createBiquadFilter();
-  rollHiFilt.type = "highshelf";
-  rollHiFilt.frequency.value = 1800;
-  rollHiFilt.gain.value = -2;
-  rollShaper = c.createWaveShaper();
-  rollShaper.curve = makeShaperCurve(5);
-  rollShaper.oversample = "2x";
-  rollGain = c.createGain();
-  rollGain.gain.value = 1e-4;
-  rollSrc.connect(rollMidFilt);
-  rollMidFilt.connect(rollHiFilt);
-  rollHiFilt.connect(rollShaper);
-  rollShaper.connect(rollGain);
-  rollGain.connect(out());
-  rollSrc.start();
-}
-function setRollLevel(c, level, rampSec, speed, intensity) {
-  if (!rollGain || !rollMidFilt || !rollSrc) return;
-  const t = c.currentTime;
-  const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
-  const gainTC = Math.max(0.01, rampSec * 0.45);
-  const rateTC = Math.max(0.015, rampSec * 0.38);
-  const freqTC = Math.max(0.012, rampSec * 0.35);
-  rollGain.gain.cancelScheduledValues(t);
-  rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 1e-4), t);
-  rollGain.gain.setTargetAtTime(Math.max(1e-4, scaled), t, gainTC);
-  rollSrc.playbackRate.cancelScheduledValues(t);
-  rollSrc.playbackRate.setValueAtTime(rollSrc.playbackRate.value, t);
-  rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
-  rollMidFilt.frequency.cancelScheduledValues(t);
-  rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
-  rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
-}
-function touchRollingSound(c, speed, intensity) {
-  lastRollTouchAt = performance.now();
-  rollIsActive = true;
-  if (rollFadeTimer) {
-    clearTimeout(rollFadeTimer);
-    rollFadeTimer = null;
-  }
-  ensureRollingLayer(c);
-  const attackSec = 0.045 + (1 - speed) * 0.07;
-  setRollLevel(c, 1, attackSec, speed, intensity);
-  const idleBeforeFadeMs = 220;
-  const scheduleFadeCheck = (delayMs) => {
-    rollFadeTimer = setTimeout(
-      () => {
-        const idleMs = performance.now() - lastRollTouchAt;
-        if (rollIsActive && idleMs < idleBeforeFadeMs) {
-          scheduleFadeCheck(idleBeforeFadeMs - idleMs + 20);
-          return;
-        }
-        rollFadeTimer = null;
-        if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
-      },
-      Math.max(40, delayMs)
-    );
-  };
-  scheduleFadeCheck(idleBeforeFadeMs);
-}
-function stopRollingSound(c, speed, immediate, intensity) {
-  rollIsActive = false;
-  lastRollTouchAt = 0;
-  if (rollFadeTimer) {
-    clearTimeout(rollFadeTimer);
-    rollFadeTimer = null;
-  }
-  if (!rollGain) return;
-  const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
-  setRollLevel(c, 0, fadeOut, speed, intensity);
-  const silenceMs = (fadeOut + 0.1) * 1e3;
-  setTimeout(() => {
-    if (!rollIsActive) teardownRollNodes();
-  }, silenceMs);
-}
-function teardownRollNodes() {
-  try {
-    rollSrc?.stop();
-  } catch {
-  }
-  rollGain?.disconnect();
+var AudioEngine = class {
+  ctx = null;
+  masterGain = null;
+  compressor = null;
+  noiseBuf = null;
+  rollingBuf = null;
+  // Rolling continuous sub-graph
   rollSrc = null;
-  rollGain = null;
   rollMidFilt = null;
   rollHiFilt = null;
   rollShaper = null;
-}
-function tryResumeCtx(c) {
-  if (c.state === "suspended") void c.resume().catch(() => {
-  });
-}
-function playSound(event, config, options) {
-  try {
-    const c = getAudioContext();
-    if (!c || !out() || !masterGain) return;
-    tryResumeCtx(c);
-    const t = c.currentTime;
-    const rollScale = clamp01(config?.rollSoundLevel ?? 1);
-    const speed = normSpeed(options?.speed);
-    if (event === "spin") {
-      touchRollingSound(c, speed, rollScale);
-      const now = performance.now();
-      const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
-      if (now - lastSpinAt < minGap) return;
-      lastSpinAt = now;
+  rollGain = null;
+  rollFadeTimer = null;
+  lastRollTouchAt = 0;
+  lastSpinAt = 0;
+  rollIsActive = false;
+  getContext() {
+    if (typeof window === "undefined") return null;
+    if (!this.ctx) {
+      const w = window;
+      const Ctor = globalThis.AudioContext || w.webkitAudioContext;
+      if (!Ctor) return null;
+      this.ctx = new Ctor();
+      this.compressor = this.ctx.createDynamicsCompressor();
+      this.compressor.threshold.value = -18;
+      this.compressor.knee.value = 24;
+      this.compressor.ratio.value = 4;
+      this.compressor.attack.value = 3e-3;
+      this.compressor.release.value = 0.22;
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.42;
+      this.compressor.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
     }
-    switch (event) {
-      case "grab":
-        playGrabSound(c, t);
-        break;
-      case "release":
-        playReleaseSound(c, t);
-        stopRollingSound(c, speed, true, rollScale);
-        break;
-      case "snap":
-        playSnapSound(c, t);
-        break;
-      case "spin":
-        playSpinTick(c, t, speed);
-        break;
-      case "stop":
-        playStopSound(c, t, speed);
-        stopRollingSound(c, speed, false, rollScale);
-        break;
-    }
-  } catch {
+    return this.ctx;
   }
+  tryResume() {
+    if (this.ctx?.state === "suspended") {
+      void this.ctx.resume().catch(() => {
+      });
+    }
+  }
+  out() {
+    return this.compressor;
+  }
+  // Utilities
+  appliedRandomVariation(v2, amt = SOUND_VAR) {
+    return v2 * (1 + (Math.random() - 0.5) * 2 * amt);
+  }
+  jitterTime(t, s = 2e-3) {
+    return t + (Math.random() - 0.5) * s;
+  }
+  clamp01(v2) {
+    return Math.max(0, Math.min(1, v2));
+  }
+  normSpeed(s) {
+    return this.clamp01((s ?? 10) / 18);
+  }
+  makeShaperCurve(amount) {
+    const n = 256, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x2 = i * 2 / n - 1;
+      curve[i] = (Math.PI + amount) * x2 / (Math.PI + amount * Math.abs(x2));
+    }
+    return curve;
+  }
+  ensureNoiseBuf() {
+    if (this.noiseBuf || !this.ctx) return this.noiseBuf;
+    const len = Math.floor(this.ctx.sampleRate * 0.5);
+    const b2 = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = b2.getChannelData(0);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      lp = lp * 0.85 + w * 0.15;
+      d[i] = w * 0.6 + lp * 0.4;
+    }
+    this.noiseBuf = b2;
+    return b2;
+  }
+  ensureRollingBuf() {
+    if (this.rollingBuf || !this.ctx) return this.rollingBuf;
+    const len = Math.floor(this.ctx.sampleRate * 2.2);
+    const b2 = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = b2.getChannelData(0);
+    let lp = 0;
+    let mid = 0;
+    let prevMid = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      lp = lp * 0.97 + w * 0.03;
+      mid = mid * 0.9 + (w - lp) * 0.1;
+      const hi = 0.95 * (prevMid - mid);
+      prevMid = mid;
+      d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
+    }
+    const fade = Math.floor(this.ctx.sampleRate * 0.04);
+    for (let i = 0; i < fade; i++) {
+      const t = i / fade;
+      d[i] *= t;
+      d[len - 1 - i] *= t;
+    }
+    this.rollingBuf = b2;
+    return b2;
+  }
+  env(g2, t, peak, dur, atk = 3e-3) {
+    g2.gain.setValueAtTime(1e-4, t);
+    g2.gain.linearRampToValueAtTime(peak, t + atk);
+    g2.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  }
+  noiseBurst(t, dur, peak, ftype, freq, q2 = 0.9) {
+    if (!this.ctx) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.ensureNoiseBuf();
+    const f = this.ctx.createBiquadFilter();
+    f.type = ftype;
+    f.frequency.value = freq;
+    f.Q.value = q2;
+    const g2 = this.ctx.createGain();
+    this.env(g2, t, peak, dur);
+    src.connect(f);
+    f.connect(g2);
+    g2.connect(this.out());
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+  toneBurst(t, dur, peak, type, f0, f1) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator(), g2 = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f0, t);
+    if (f1 != null) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    }
+    this.env(g2, t, peak, dur, 4e-3);
+    osc.connect(g2);
+    g2.connect(this.out());
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+  // Pre-configured sounds
+  playGrabSound(t) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(6e-3),
+      this.appliedRandomVariation(0.22),
+      "highpass",
+      this.appliedRandomVariation(3200),
+      this.appliedRandomVariation(0.6)
+    );
+    this.noiseBurst(
+      t + 3e-3,
+      this.appliedRandomVariation(0.045),
+      this.appliedRandomVariation(0.12),
+      "bandpass",
+      this.appliedRandomVariation(680),
+      this.appliedRandomVariation(0.7)
+    );
+    this.toneBurst(
+      this.jitterTime(t, 1e-3),
+      this.appliedRandomVariation(0.075),
+      this.appliedRandomVariation(0.07),
+      "sine",
+      this.appliedRandomVariation(145),
+      this.appliedRandomVariation(90)
+    );
+    this.noiseBurst(
+      t + 8e-3,
+      this.appliedRandomVariation(0.06),
+      this.appliedRandomVariation(0.055),
+      "lowpass",
+      this.appliedRandomVariation(280),
+      this.appliedRandomVariation(0.5)
+    );
+  }
+  playReleaseSound(t) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(5e-3),
+      this.appliedRandomVariation(0.15),
+      "highpass",
+      this.appliedRandomVariation(2800),
+      this.appliedRandomVariation(0.55)
+    );
+    this.noiseBurst(
+      t + 3e-3,
+      this.appliedRandomVariation(0.032),
+      this.appliedRandomVariation(0.085),
+      "bandpass",
+      this.appliedRandomVariation(600),
+      this.appliedRandomVariation(0.65)
+    );
+    this.toneBurst(
+      this.jitterTime(t, 1e-3),
+      this.appliedRandomVariation(0.06),
+      this.appliedRandomVariation(0.04),
+      "sine",
+      this.appliedRandomVariation(130),
+      this.appliedRandomVariation(80)
+    );
+  }
+  playSnapSound(t) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(4e-3),
+      this.appliedRandomVariation(0.35),
+      "highpass",
+      this.appliedRandomVariation(5e3),
+      this.appliedRandomVariation(0.5)
+    );
+    this.noiseBurst(
+      t + 1e-3,
+      this.appliedRandomVariation(0.018),
+      this.appliedRandomVariation(0.22),
+      "bandpass",
+      this.appliedRandomVariation(1800),
+      this.appliedRandomVariation(1.1)
+    );
+    this.toneBurst(
+      this.jitterTime(t, 5e-4),
+      this.appliedRandomVariation(0.055),
+      this.appliedRandomVariation(0.11),
+      "triangle",
+      this.appliedRandomVariation(380),
+      this.appliedRandomVariation(160)
+    );
+    this.noiseBurst(
+      t + 0.012,
+      this.appliedRandomVariation(0.022),
+      this.appliedRandomVariation(0.09),
+      "bandpass",
+      this.appliedRandomVariation(1100),
+      this.appliedRandomVariation(0.8)
+    );
+  }
+  playSpinTick(t, speed) {
+    const fc = 380 + speed * 560 + (Math.random() - 0.5) * 180;
+    const pk = 0.028 + speed * 0.038;
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(9e-3),
+      this.appliedRandomVariation(pk),
+      "bandpass",
+      fc,
+      this.appliedRandomVariation(1.4)
+    );
+    if (Math.random() < 0.35) {
+      this.toneBurst(
+        this.jitterTime(t, 1e-3),
+        this.appliedRandomVariation(0.012),
+        this.appliedRandomVariation(0.012),
+        "sine",
+        this.appliedRandomVariation(200 + speed * 120)
+      );
+    }
+  }
+  playStopSound(t, speed) {
+    const dur = 0.08 + speed * 0.18;
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(dur * 0.6),
+      this.appliedRandomVariation(0.08 + speed * 0.06),
+      "bandpass",
+      this.appliedRandomVariation(320 + speed * 140),
+      this.appliedRandomVariation(0.7)
+    );
+    this.toneBurst(
+      this.jitterTime(t, 2e-3),
+      this.appliedRandomVariation(dur * 0.9),
+      this.appliedRandomVariation(0.055),
+      "sine",
+      this.appliedRandomVariation(95 + speed * 55),
+      this.appliedRandomVariation(35)
+    );
+    this.noiseBurst(
+      t + dur * 0.3,
+      this.appliedRandomVariation(dur * 0.5),
+      this.appliedRandomVariation(0.035),
+      "lowpass",
+      this.appliedRandomVariation(180),
+      this.appliedRandomVariation(0.45)
+    );
+    if (speed > 0.4) {
+      this.noiseBurst(
+        t + dur * 0.55,
+        this.appliedRandomVariation(dur * 0.35),
+        this.appliedRandomVariation(0.02),
+        "bandpass",
+        this.appliedRandomVariation(260),
+        this.appliedRandomVariation(0.6)
+      );
+    }
+  }
+  // Rolling Loop Logic
+  ensureRollingLayer() {
+    if (this.rollSrc || !this.ctx) return;
+    this.rollSrc = this.ctx.createBufferSource();
+    this.rollSrc.buffer = this.ensureRollingBuf();
+    this.rollSrc.loop = true;
+    this.rollSrc.playbackRate.value = 1;
+    this.rollMidFilt = this.ctx.createBiquadFilter();
+    this.rollMidFilt.type = "bandpass";
+    this.rollMidFilt.frequency.value = 620;
+    this.rollMidFilt.Q.value = 0.48;
+    this.rollHiFilt = this.ctx.createBiquadFilter();
+    this.rollHiFilt.type = "highshelf";
+    this.rollHiFilt.frequency.value = 1800;
+    this.rollHiFilt.gain.value = -2;
+    this.rollShaper = this.ctx.createWaveShaper();
+    this.rollShaper.curve = this.makeShaperCurve(5);
+    this.rollShaper.oversample = "2x";
+    this.rollGain = this.ctx.createGain();
+    this.rollGain.gain.value = 1e-4;
+    this.rollSrc.connect(this.rollMidFilt);
+    this.rollMidFilt.connect(this.rollHiFilt);
+    this.rollHiFilt.connect(this.rollShaper);
+    this.rollShaper.connect(this.rollGain);
+    this.rollGain.connect(this.out());
+    this.rollSrc.start();
+  }
+  setRollLevel(level, rampSec, speed, intensity) {
+    if (!this.rollGain || !this.rollMidFilt || !this.rollSrc || !this.ctx)
+      return;
+    const t = this.ctx.currentTime;
+    const scaled = this.clamp01(level) * this.clamp01(intensity) * (0.032 + speed * 0.068);
+    const gainTC = Math.max(0.01, rampSec * 0.45);
+    const rateTC = Math.max(0.015, rampSec * 0.38);
+    const freqTC = Math.max(0.012, rampSec * 0.35);
+    this.rollGain.gain.cancelScheduledValues(t);
+    this.rollGain.gain.setValueAtTime(
+      Math.max(this.rollGain.gain.value, 1e-4),
+      t
+    );
+    this.rollGain.gain.setTargetAtTime(Math.max(1e-4, scaled), t, gainTC);
+    this.rollSrc.playbackRate.cancelScheduledValues(t);
+    this.rollSrc.playbackRate.setValueAtTime(
+      this.rollSrc.playbackRate.value,
+      t
+    );
+    this.rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
+    this.rollMidFilt.frequency.cancelScheduledValues(t);
+    this.rollMidFilt.frequency.setValueAtTime(
+      this.rollMidFilt.frequency.value,
+      t
+    );
+    this.rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
+  }
+  teardownRollNodes() {
+    try {
+      this.rollSrc?.stop();
+    } catch {
+    }
+    this.rollGain?.disconnect();
+    this.rollSrc = null;
+    this.rollGain = null;
+    this.rollMidFilt = null;
+    this.rollHiFilt = null;
+    this.rollShaper = null;
+  }
+  // Public methods
+  touchRollingSound(speed, intensity) {
+    this.lastRollTouchAt = performance.now();
+    this.rollIsActive = true;
+    if (this.rollFadeTimer) clearTimeout(this.rollFadeTimer);
+    this.ensureRollingLayer();
+    this.setRollLevel(1, 0.045 + (1 - speed) * 0.07, speed, intensity);
+    const scheduleFadeCheck = (delayMs) => {
+      this.rollFadeTimer = setTimeout(
+        () => {
+          const idleMs = performance.now() - this.lastRollTouchAt;
+          if (this.rollIsActive && idleMs < 220) {
+            scheduleFadeCheck(220 - idleMs + 20);
+            return;
+          }
+          this.rollFadeTimer = null;
+          if (!this.rollIsActive) this.setRollLevel(0, 0.18, speed, intensity);
+        },
+        Math.max(40, delayMs)
+      );
+    };
+    scheduleFadeCheck(220);
+  }
+  stopRollingSound(speed, immediate, intensity) {
+    this.rollIsActive = false;
+    this.lastRollTouchAt = 0;
+    if (this.rollFadeTimer) {
+      clearTimeout(this.rollFadeTimer);
+      this.rollFadeTimer = null;
+    }
+    if (!this.rollGain) return;
+    const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
+    this.setRollLevel(0, fadeOut, speed, intensity);
+    setTimeout(
+      () => {
+        if (!this.rollIsActive) this.teardownRollNodes();
+      },
+      (fadeOut + 0.1) * 1e3
+    );
+  }
+  playSound(event, config, options) {
+    try {
+      const c = this.getContext();
+      if (!c || !this.out()) return;
+      this.tryResume();
+      const t = c.currentTime;
+      const rollScale = this.clamp01(config?.rollSoundLevel ?? 1);
+      const speed = this.normSpeed(options?.speed);
+      if (event === "spin") {
+        this.touchRollingSound(speed, rollScale);
+        const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
+        if (performance.now() - this.lastSpinAt < minGap) return;
+        this.lastSpinAt = performance.now();
+      }
+      switch (event) {
+        case "grab":
+          this.playGrabSound(t);
+          break;
+        case "release":
+          this.playReleaseSound(t);
+          this.stopRollingSound(speed, true, rollScale);
+          break;
+        case "snap":
+          this.playSnapSound(t);
+          break;
+        case "spin":
+          this.playSpinTick(t, speed);
+          break;
+        case "stop":
+          this.playStopSound(t, speed);
+          this.stopRollingSound(speed, false, rollScale);
+          break;
+      }
+    } catch {
+    }
+  }
+};
+var engine = new AudioEngine();
+function playSound(event, config, options) {
+  engine.playSound(event, config, options);
 }
 function feedback(event, config, options) {
   if (config.sound) playSound(event, config, options);
@@ -2423,11 +2538,11 @@ function feedback(event, config, options) {
 }
 
 // src/physicsEngine.ts
-function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovement2, updateTexture2, config, container, feedback2) {
+function createPhysicsLoop(state, isTrackballDragging, tamaruPaused, applyMovement2, updateTexture2, config, container, feedback2) {
   let wasStopped = true;
   let lastSpinFeedbackAt = 0;
   function physicsLoop() {
-    if (!tamaruPaused2() && !isTrackballDragging()) {
+    if (!tamaruPaused() && !isTrackballDragging()) {
       updatePhysics(
         state,
         (dx, dy) => applyMovement2(
@@ -2526,410 +2641,411 @@ function setupStickMode(stickBtn, container, options) {
   };
 }
 
-// src/main.ts
-var tamaruContainer = null;
-var tamaruAnimationFrame = null;
-var tamaruPaused = false;
-var tamaruConfig = null;
-var tamaruState = null;
-var lastPointerSpinFeedbackAt = 0;
-var cleanupVisibilityHandlers = null;
-function applyThemeVars(vars) {
-  const root = document.documentElement;
-  Object.entries(vars).forEach(([key, value]) => {
-    if (key === "name" || key === "author" || key === "desc") return;
-    root.style.setProperty(`--vt-${key}`, value);
-  });
-}
-function initVirtualTrackball(config) {
-  if (tamaruContainer) {
-    mainLogger.warn("Init called but Tamaru is already mounted. Aborting.");
-    return;
+// src/app.ts
+var TamaruApp = class {
+  container = null;
+  config;
+  state;
+  animationFrame = null;
+  paused = false;
+  isWidgetDragging = false;
+  isTrackballDragging = false;
+  currentLeft = 0;
+  currentTop = 0;
+  startLeft = 0;
+  startTop = 0;
+  startMouseX = 0;
+  startMouseY = 0;
+  tbPrevMouseX = 0;
+  tbPrevMouseY = 0;
+  lastPointerSpinFeedbackAt = 0;
+  controlsHideTimeout = null;
+  cleanupHooks = [];
+  constructor(config) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.state = { texPosX: 0, texPosY: 0, velX: 0, velY: 0, friction: 0.92 };
   }
-  mainLogger.info("Initializing Tamaru...", { state: { config } });
-  tamaruConfig = { ...DEFAULT_CONFIG, ...config };
-  const themeVars = {
-    ...themes[tamaruConfig.theme] || themes["default"],
-    ...tamaruConfig.customTheme
-  };
-  applyThemeVars(themeVars);
-  injectStyleTag(styles_default);
-  const container = createWidgetContainer();
-  document.body.appendChild(container);
-  tamaruContainer = container;
-  let currentLeft = window.innerWidth - 120 - 24;
-  let currentTop = window.innerHeight - 120 - 24;
-  container.style.left = currentLeft + "px";
-  container.style.top = currentTop + "px";
-  const dragHandle = container.querySelector("#vt-drag-handle");
-  let isWidgetDragging = false;
-  let startMouseX = 0, startMouseY = 0;
-  let startLeft = 0, startTop = 0;
-  dragHandle.addEventListener("pointerdown", (e) => {
-    isWidgetDragging = true;
-    container.classList.add("is-dragging");
-    startMouseX = e.clientX;
-    startMouseY = e.clientY;
-    startLeft = currentLeft;
-    startTop = currentTop;
-    dragHandle.setPointerCapture(e.pointerId);
-    e.stopPropagation();
-    feedback("grab", tamaruConfig);
-  });
-  dragHandle.addEventListener("pointermove", (e) => {
-    if (!isWidgetDragging) return;
-    currentLeft = startLeft + (e.clientX - startMouseX);
-    currentTop = startTop + (e.clientY - startMouseY);
-    container.style.left = currentLeft + "px";
-    container.style.top = currentTop + "px";
-  });
-  const snapToEdgeHandler = () => {
+  init() {
+    if (this.container) {
+      mainLogger.warn("Init called but Tamaru is already mounted. Aborting.");
+      return;
+    }
+    mainLogger.info("Initializing Tamaru...", {
+      state: { config: this.config }
+    });
+    this.applyTheme();
+    injectStyleTag(styles_default);
+    this.container = createWidgetContainer();
+    document.body.appendChild(this.container);
+    this.currentLeft = window.innerWidth - 120 - 24;
+    this.currentTop = window.innerHeight - 120 - 24;
+    this.updatePosition();
+    this.bindWidgetDragging();
+    this.bindMiniToggle();
+    this.bindTrackball();
+    this.bindStickMode();
+    this.bindVisibility();
+    const physicsLoop = createPhysicsLoop(
+      this.state,
+      () => this.isTrackballDragging,
+      () => this.paused,
+      applyMovement,
+      (x2, y2) => this.updateTextureHandler(x2, y2),
+      this.config,
+      this.container,
+      (event, speed) => feedback(event, this.config, { speed })
+    );
+    this.animationFrame = requestAnimationFrame(physicsLoop);
+  }
+  applyTheme() {
+    const themeVars = {
+      ...themes[this.config.theme] || themes["default"],
+      ...this.config.customTheme
+    };
+    const root = document.documentElement;
+    Object.entries(themeVars).forEach(([key, value]) => {
+      if (key !== "name" && key !== "author" && key !== "desc")
+        root.style.setProperty(`--vt-${key}`, value);
+    });
+  }
+  updatePosition() {
+    if (!this.container) return;
+    this.container.style.left = this.currentLeft + "px";
+    this.container.style.top = this.currentTop + "px";
+  }
+  snapToEdgeHandler = () => {
+    if (!this.container) return;
     const pos = doSnapToEdge(
-      container,
-      currentLeft,
-      currentTop,
-      (ev) => feedback(ev, tamaruConfig),
-      tamaruConfig.snapDistance
+      this.container,
+      this.currentLeft,
+      this.currentTop,
+      (ev) => feedback(ev, this.config),
+      this.config.snapDistance
     );
-    currentLeft = pos.left;
-    currentTop = pos.top;
+    this.currentLeft = pos.left;
+    this.currentTop = pos.top;
   };
-  dragHandle.addEventListener("pointerup", (e) => {
-    isWidgetDragging = false;
-    container.classList.remove("is-dragging");
-    dragHandle.releasePointerCapture(e.pointerId);
-    snapToEdgeHandler();
-    feedback("release", tamaruConfig);
-  });
-  window.addEventListener("resize", snapToEdgeHandler);
-  const toggleBtn = container.querySelector("#vt-toggle-btn");
-  const trackballArea = container.querySelector(
-    "#vt-trackball-area"
-  );
-  const setWidgetSize = (sizePx) => {
-    container.style.width = sizePx + "px";
-    container.style.height = sizePx + "px";
-    trackballArea.style.width = sizePx + "px";
-    trackballArea.style.height = sizePx + "px";
-  };
-  const applyMiniState = (mini, skipSnap = false) => {
-    const size = tamaruConfig ? tamaruConfig.size : 120;
-    const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
-    container.classList.toggle("vt-mini", mini);
-    toggleBtn.textContent = mini ? "+" : "-";
-    setWidgetSize(targetSize);
-    if (!skipSnap) snapToEdgeHandler();
-  };
-  toggleBtn.addEventListener("click", () => {
-    const nextMini = !container.classList.contains("vt-mini");
-    applyMiniState(nextMini);
-  });
-  trackballArea.addEventListener("click", () => {
-    if (container.classList.contains("vt-mini") && !container.classList.contains("vt-stick-mode")) {
-      applyMiniState(false);
-    }
-  });
-  const viewport = container.querySelector("#vt-viewport");
-  const texture = container.querySelector("#vt-texture");
-  const state = {
-    texPosX: 0,
-    texPosY: 0,
-    velX: 0,
-    velY: 0,
-    friction: 0.92
-  };
-  let isTrackballDragging = false;
-  let tbPrevMouseX = 0, tbPrevMouseY = 0;
-  const updateTextureHandler = (x2, y2) => updateTexture(texture, x2, y2);
-  viewport.addEventListener("pointerdown", (e) => {
-    isTrackballDragging = true;
-    tbPrevMouseX = e.clientX;
-    tbPrevMouseY = e.clientY;
-    state.velX = 0;
-    state.velY = 0;
-    viewport.setPointerCapture(e.pointerId);
-  });
-  viewport.addEventListener("pointermove", (e) => {
-    if (!isTrackballDragging) return;
-    const dx = e.clientX - tbPrevMouseX;
-    const dy = e.clientY - tbPrevMouseY;
-    state.velX = dx;
-    state.velY = dy;
-    applyMovement(
-      state,
-      dx,
-      dy,
-      (dx2, dy2) => doScroll(
-        dx2,
-        dy2,
-        tamaruConfig.scrollMode,
-        container,
-        tamaruConfig.scrollFallback,
-        tamaruConfig.scrollFallbackContainer
-      ),
-      updateTextureHandler,
-      tamaruConfig.sensitivity
+  bindWidgetDragging() {
+    const handle = this.container.querySelector(
+      "#vt-drag-handle"
     );
-    tbPrevMouseX = e.clientX;
-    tbPrevMouseY = e.clientY;
-    const speed = Math.hypot(dx, dy);
-    if (speed > 10) {
-      const now = performance.now();
-      if (now - lastPointerSpinFeedbackAt >= 85) {
-        lastPointerSpinFeedbackAt = now;
-        feedback("spin", tamaruConfig, { speed });
-      }
-    }
-  });
-  viewport.addEventListener("pointerup", (e) => {
-    isTrackballDragging = false;
-    viewport.releasePointerCapture(e.pointerId);
-  });
-  viewport.addEventListener(
-    "wheel",
-    (e) => {
-      e.preventDefault();
-      state.velX += -e.deltaX * 0.2;
-      state.velY += -e.deltaY * 0.2;
-      state.velX = Math.max(-60, Math.min(60, state.velX));
-      state.velY = Math.max(-60, Math.min(60, state.velY));
-    },
-    { passive: false }
-  );
-  tamaruState = state;
-  const physicsLoop = createPhysicsLoop(
-    state,
-    () => isTrackballDragging,
-    () => tamaruPaused,
-    applyMovement,
-    updateTextureHandler,
-    tamaruConfig,
-    container,
-    (event, speed) => feedback(event, tamaruConfig, { speed })
-  );
-  tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
-  let preStickLeft = 0;
-  let preStickTop = 0;
-  const stickBtn = container.querySelector("#vt-stick-btn");
-  const isMobileOrCoarse = window.matchMedia("(pointer: coarse)").matches;
-  if (!tamaruConfig.stickMode || isMobileOrCoarse) {
-    stickBtn.style.display = "none";
+    handle.addEventListener("pointerdown", (e) => {
+      this.isWidgetDragging = true;
+      this.container.classList.add("is-dragging");
+      this.startMouseX = e.clientX;
+      this.startMouseY = e.clientY;
+      this.startLeft = this.currentLeft;
+      this.startTop = this.currentTop;
+      handle.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      feedback("grab", this.config);
+    });
+    handle.addEventListener("pointermove", (e) => {
+      if (!this.isWidgetDragging) return;
+      this.currentLeft = this.startLeft + (e.clientX - this.startMouseX);
+      this.currentTop = this.startTop + (e.clientY - this.startMouseY);
+      this.updatePosition();
+    });
+    handle.addEventListener("pointerup", (e) => {
+      this.isWidgetDragging = false;
+      this.container.classList.remove("is-dragging");
+      handle.releasePointerCapture(e.pointerId);
+      this.snapToEdgeHandler();
+      feedback("release", this.config);
+    });
+    window.addEventListener("resize", this.snapToEdgeHandler);
+    this.cleanupHooks.push(
+      () => window.removeEventListener("resize", this.snapToEdgeHandler)
+    );
   }
-  const cleanupStickMode = setupStickMode(
-    stickBtn,
-    container,
-    /* @__PURE__ */ (() => {
-      let currentStickTarget = null;
-      let lastCycleTime = 0;
-      let wheelAccX = 0;
-      let wheelAccY = 0;
-      const CYCLE_THRESHOLD = 50;
-      return {
-        onEnter: () => {
-          preStickLeft = currentLeft;
-          preStickTop = currentTop;
-          const size = tamaruConfig ? tamaruConfig.size : 120;
-          const miniSize = Math.max(40, Math.round(size * 0.4));
-          currentLeft = (window.innerWidth - miniSize) / 2;
-          currentTop = (window.innerHeight - miniSize) / 2;
-          container.style.left = currentLeft + "px";
-          container.style.top = currentTop + "px";
-          applyMiniState(true, true);
-          container.classList.add("vt-stick-mode");
-        },
-        onExit: () => {
-          currentLeft = preStickLeft;
-          currentTop = preStickTop;
-          container.style.left = currentLeft + "px";
-          container.style.top = currentTop + "px";
-          container.classList.remove("vt-stick-mode");
-          applyMiniState(false, false);
-          setStickScrollTarget(null);
-          currentStickTarget = null;
-        },
-        onMove: (e) => {
-          if (!tamaruConfig?.stickMode) return;
-          const dx = e.movementX;
-          const dy = e.movementY;
-          state.velX += dx * 0.5;
-          state.velY += dy * 0.5;
-        },
-        onWheel: (e) => {
-          if (!tamaruConfig?.stickMode) return;
-          const cycleKey = tamaruConfig.stickModeTargetCycleKey || "Shift";
-          const isModifierPressed = cycleKey === "Shift" && e.shiftKey || cycleKey === "Alt" && e.altKey || cycleKey === "Control" && e.ctrlKey || cycleKey === "Meta" && e.metaKey || cycleKey === "None" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
-          if (isModifierPressed) {
-            e.preventDefault();
-            wheelAccX += e.deltaX;
-            wheelAccY += e.deltaY;
-            const now = Date.now();
-            if (now - lastCycleTime > 300 && (Math.abs(wheelAccX) > CYCLE_THRESHOLD || Math.abs(wheelAccY) > CYCLE_THRESHOLD)) {
-              currentStickTarget = cycleScrollableTarget(
-                wheelAccX,
-                wheelAccY,
-                currentStickTarget
-              );
-              setStickScrollTarget(currentStickTarget);
-              if (currentStickTarget && tamaruConfig.stickModeCycleSnap !== false) {
-                currentStickTarget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                  inline: "center"
-                });
-              }
-              lastCycleTime = now;
-              wheelAccX = 0;
-              wheelAccY = 0;
+  setWidgetSize(sizePx) {
+    if (!this.container) return;
+    this.container.style.width = sizePx + "px";
+    this.container.style.height = sizePx + "px";
+    const trackballArea = this.container.querySelector(
+      "#vt-trackball-area"
+    );
+    if (trackballArea) {
+      trackballArea.style.width = sizePx + "px";
+      trackballArea.style.height = sizePx + "px";
+    }
+    const sphere = this.container.querySelector("#vt-sphere");
+    if (sphere) {
+      const inner = Math.max(0, sizePx - 20);
+      sphere.style.width = inner + "px";
+      sphere.style.height = inner + "px";
+    }
+  }
+  applyMiniState(mini, skipSnap = false) {
+    if (!this.container) return;
+    const size = this.config.size || 120;
+    const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
+    this.container.classList.toggle("vt-mini", mini);
+    const toggleBtn = this.container.querySelector(
+      "#vt-toggle-btn"
+    );
+    if (toggleBtn) toggleBtn.textContent = mini ? "+" : "-";
+    this.setWidgetSize(targetSize);
+    if (!skipSnap) this.snapToEdgeHandler();
+  }
+  bindMiniToggle() {
+    const toggleBtn = this.container.querySelector(
+      "#vt-toggle-btn"
+    );
+    const trackballArea = this.container.querySelector(
+      "#vt-trackball-area"
+    );
+    toggleBtn.addEventListener("click", () => {
+      this.applyMiniState(!this.container.classList.contains("vt-mini"));
+    });
+    trackballArea.addEventListener("click", () => {
+      if (this.container.classList.contains("vt-mini") && !this.container.classList.contains("vt-stick-mode")) {
+        this.applyMiniState(false);
+      }
+    });
+    const controls = this.container.querySelector(
+      "#vt-controls"
+    );
+    const hoverIn = () => this.controlsHideTimeout = showControls(
+      controls,
+      this.controlsHideTimeout,
+      setControlsVisible
+    );
+    const hoverOut = () => this.controlsHideTimeout = hideControlsWithDelay(
+      this.container,
+      controls,
+      this.controlsHideTimeout,
+      setControlsVisible
+    );
+    trackballArea.addEventListener("mouseenter", hoverIn);
+    trackballArea.addEventListener("mouseleave", hoverOut);
+    controls.addEventListener("mouseenter", hoverIn);
+    controls.addEventListener("mouseleave", hoverOut);
+    setControlsVisible(controls, false);
+  }
+  updateTextureHandler(x2, y2) {
+    if (!this.container) return;
+    const texture = this.container.querySelector("#vt-texture");
+    updateTexture(texture, x2, y2);
+  }
+  bindTrackball() {
+    const viewport = this.container.querySelector(
+      "#vt-viewport"
+    );
+    viewport.addEventListener("pointerdown", (e) => {
+      this.isTrackballDragging = true;
+      this.tbPrevMouseX = e.clientX;
+      this.tbPrevMouseY = e.clientY;
+      this.state.velX = 0;
+      this.state.velY = 0;
+      viewport.setPointerCapture(e.pointerId);
+    });
+    viewport.addEventListener("pointermove", (e) => {
+      if (!this.isTrackballDragging) return;
+      const dx = e.clientX - this.tbPrevMouseX;
+      const dy = e.clientY - this.tbPrevMouseY;
+      this.state.velX = dx;
+      this.state.velY = dy;
+      applyMovement(
+        this.state,
+        dx,
+        dy,
+        (dx2, dy2) => doScroll(
+          dx2,
+          dy2,
+          this.config.scrollMode,
+          this.container,
+          this.config.scrollFallback,
+          this.config.scrollFallbackContainer
+        ),
+        (x2, y2) => this.updateTextureHandler(x2, y2),
+        this.config.sensitivity
+      );
+      this.tbPrevMouseX = e.clientX;
+      this.tbPrevMouseY = e.clientY;
+      const speed = Math.hypot(dx, dy);
+      if (speed > 10) {
+        const now = performance.now();
+        if (now - this.lastPointerSpinFeedbackAt >= 85) {
+          this.lastPointerSpinFeedbackAt = now;
+          feedback("spin", this.config, { speed });
+        }
+      }
+    });
+    viewport.addEventListener("pointerup", (e) => {
+      this.isTrackballDragging = false;
+      viewport.releasePointerCapture(e.pointerId);
+    });
+    viewport.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        this.state.velX += -e.deltaX * 0.2;
+        this.state.velY += -e.deltaY * 0.2;
+        this.state.velX = Math.max(-60, Math.min(60, this.state.velX));
+        this.state.velY = Math.max(-60, Math.min(60, this.state.velY));
+      },
+      { passive: false }
+    );
+  }
+  bindStickMode() {
+    const stickBtn = this.container.querySelector(
+      "#vt-stick-btn"
+    );
+    const isMobileOrCoarse = window.matchMedia("(pointer: coarse)").matches;
+    if (!this.config.stickMode || isMobileOrCoarse) {
+      stickBtn.style.display = "none";
+    }
+    let preStickLeft = 0;
+    let preStickTop = 0;
+    let currentStickTarget = null;
+    let lastCycleTime = 0;
+    let wheelAccX = 0;
+    let wheelAccY = 0;
+    const CYCLE_THRESHOLD = 50;
+    const cleanupStickMode = setupStickMode(stickBtn, this.container, {
+      onEnter: () => {
+        preStickLeft = this.currentLeft;
+        preStickTop = this.currentTop;
+        const size = this.config.size || 120;
+        const miniSize = Math.max(40, Math.round(size * 0.4));
+        this.currentLeft = (window.innerWidth - miniSize) / 2;
+        this.currentTop = (window.innerHeight - miniSize) / 2;
+        this.updatePosition();
+        this.applyMiniState(true, true);
+        this.container.classList.add("vt-stick-mode");
+      },
+      onExit: () => {
+        this.currentLeft = preStickLeft;
+        this.currentTop = preStickTop;
+        this.updatePosition();
+        this.container.classList.remove("vt-stick-mode");
+        this.applyMiniState(false, false);
+        setStickScrollTarget(null);
+        currentStickTarget = null;
+      },
+      onMove: (e) => {
+        if (!this.config.stickMode) return;
+        this.state.velX += e.movementX * 0.5;
+        this.state.velY += e.movementY * 0.5;
+      },
+      onWheel: (e) => {
+        if (!this.config.stickMode) return;
+        const cycleKey = this.config.stickModeTargetCycleKey || "Shift";
+        const isModifierPressed = cycleKey === "Shift" && e.shiftKey || cycleKey === "Alt" && e.altKey || cycleKey === "Control" && e.ctrlKey || cycleKey === "Meta" && e.metaKey || cycleKey === "None" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
+        if (isModifierPressed) {
+          e.preventDefault();
+          wheelAccX += e.deltaX;
+          wheelAccY += e.deltaY;
+          const now = Date.now();
+          if (now - lastCycleTime > 300 && (Math.abs(wheelAccX) > CYCLE_THRESHOLD || Math.abs(wheelAccY) > CYCLE_THRESHOLD)) {
+            currentStickTarget = cycleScrollableTarget(
+              wheelAccX,
+              wheelAccY,
+              currentStickTarget
+            );
+            setStickScrollTarget(currentStickTarget);
+            if (currentStickTarget && this.config.stickModeCycleSnap !== false) {
+              currentStickTarget.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "center"
+              });
             }
-          } else {
+            lastCycleTime = now;
             wheelAccX = 0;
             wheelAccY = 0;
           }
+        } else {
+          wheelAccX = 0;
+          wheelAccY = 0;
         }
-      };
-    })()
-  );
-  const stopInertiaAndRolling = () => {
-    if (!tamaruState || !tamaruConfig) return;
-    const speed = Math.hypot(tamaruState.velX || 0, tamaruState.velY || 0);
-    tamaruState.velX = 0;
-    tamaruState.velY = 0;
-    if (speed > 0.05) {
-      feedback("stop", tamaruConfig, { speed });
+      }
+    });
+    this.cleanupHooks.push(cleanupStickMode);
+  }
+  stopInertiaAndRolling() {
+    const speed = Math.hypot(this.state.velX || 0, this.state.velY || 0);
+    this.state.velX = 0;
+    this.state.velY = 0;
+    if (speed > 0.05) feedback("stop", this.config, { speed });
+  }
+  bindVisibility() {
+    const onVisibilityChange = () => {
+      if (document.hidden) this.stopInertiaAndRolling();
+    };
+    const onWindowBlur = () => this.stopInertiaAndRolling();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("blur", onWindowBlur);
+    this.cleanupHooks.push(() => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onWindowBlur);
+    });
+  }
+  updateConfig(newConfig) {
+    Object.assign(this.config, newConfig);
+    if (newConfig.theme || newConfig.customTheme) this.applyTheme();
+    if (typeof newConfig.friction === "number")
+      this.state.friction = this.config.friction;
+    if (typeof newConfig.size === "number") {
+      this.setWidgetSize(this.config.size);
+      if (this.container.classList.contains("vt-mini")) {
+        this.setWidgetSize(Math.max(40, Math.round(this.config.size * 0.4)));
+      }
+      setTimeout(this.snapToEdgeHandler, 50);
     }
-  };
-  const onVisibilityChange = () => {
-    if (document.hidden) stopInertiaAndRolling();
-  };
-  const onWindowBlur = () => {
-    stopInertiaAndRolling();
-  };
-  document.addEventListener("visibilitychange", onVisibilityChange);
-  window.addEventListener("blur", onWindowBlur);
-  cleanupVisibilityHandlers = () => {
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    window.removeEventListener("blur", onWindowBlur);
-    cleanupStickMode();
-    cleanupVisibilityHandlers = null;
-  };
-  const controls = container.querySelector("#vt-controls");
-  let controlsHideTimeout = null;
-  trackballArea.addEventListener("mouseenter", () => {
-    controlsHideTimeout = showControls(
-      controls,
-      controlsHideTimeout,
-      setControlsVisible
-    );
-  });
-  trackballArea.addEventListener("mouseleave", () => {
-    controlsHideTimeout = hideControlsWithDelay(
-      container,
-      controls,
-      controlsHideTimeout,
-      setControlsVisible
-    );
-  });
-  controls.addEventListener("mouseenter", () => {
-    controlsHideTimeout = showControls(
-      controls,
-      controlsHideTimeout,
-      setControlsVisible
-    );
-  });
-  controls.addEventListener("mouseleave", () => {
-    controlsHideTimeout = hideControlsWithDelay(
-      container,
-      controls,
-      controlsHideTimeout,
-      setControlsVisible
-    );
-  });
-  setControlsVisible(controls, false);
+  }
+  destroy() {
+    this.cleanupHooks.forEach((hook) => hook());
+    if (this.animationFrame !== null) cancelAnimationFrame(this.animationFrame);
+    if (this.container) this.container.remove();
+    this.container = null;
+    const styleTag = document.getElementById("vt-styles");
+    if (styleTag) styleTag.remove();
+  }
+  hide() {
+    if (this.container) this.container.style.display = "none";
+  }
+  show() {
+    if (this.container) this.container.style.display = "flex";
+  }
+};
+
+// src/main.ts
+var tamaruInstance = null;
+function initVirtualTrackball(config) {
+  if (tamaruInstance) {
+    mainLogger.warn("Init called but Tamaru is already mounted. Aborting.");
+    return;
+  }
+  tamaruInstance = new TamaruApp(config);
+  tamaruInstance.init();
 }
 function updateVirtualTrackballConfig(newConfig) {
-  if (!tamaruContainer || !tamaruConfig) {
+  if (!tamaruInstance) {
     mainLogger.warn("Failed to update config: Widget not initialized.");
     return;
   }
   mainLogger.debug("Updating config", { state: { newConfig } });
-  Object.assign(tamaruConfig, newConfig);
-  if (newConfig.theme || newConfig.customTheme) {
-    const themeVars = {
-      ...themes[tamaruConfig.theme] || themes["default"],
-      ...tamaruConfig.customTheme
-    };
-    applyThemeVars(themeVars);
-  }
-  if (tamaruState) {
-    if (typeof newConfig.friction === "number")
-      tamaruState.friction = tamaruConfig.friction;
-  }
-  if (typeof newConfig.size === "number") {
-    const size = tamaruConfig.size;
-    tamaruContainer.style.width = size + "px";
-    tamaruContainer.style.height = size + "px";
-    const trackballArea = tamaruContainer.querySelector(
-      "#vt-trackball-area"
-    );
-    if (trackballArea) {
-      trackballArea.style.width = size + "px";
-      trackballArea.style.height = size + "px";
-    }
-    const sphere = tamaruContainer.querySelector(
-      "#vt-sphere"
-    );
-    if (sphere) {
-      const inner = Math.max(0, size - 20);
-      sphere.style.width = inner + "px";
-      sphere.style.height = inner + "px";
-    }
-    if (tamaruContainer.classList.contains("vt-mini")) {
-      const miniSize = Math.max(40, Math.round(size * 0.4));
-      tamaruContainer.style.width = miniSize + "px";
-      tamaruContainer.style.height = miniSize + "px";
-      if (trackballArea) {
-        trackballArea.style.width = miniSize + "px";
-        trackballArea.style.height = miniSize + "px";
-      }
-    }
-  }
+  tamaruInstance.updateConfig(newConfig);
 }
 function destroyVirtualTrackball() {
-  if (!tamaruContainer) {
+  if (!tamaruInstance) {
     mainLogger.warn("Destroy called but no widget is active");
     return;
   }
   mainLogger.info("Destroying widget");
-  cleanupVisibilityHandlers?.();
-  if (tamaruAnimationFrame !== null) {
-    cancelAnimationFrame(tamaruAnimationFrame);
-    tamaruAnimationFrame = null;
-  }
-  tamaruContainer.remove();
-  tamaruContainer = null;
-  const styleTag = document.getElementById("vt-styles");
-  if (styleTag) styleTag.remove();
+  tamaruInstance.destroy();
+  tamaruInstance = null;
 }
 function hideVirtualTrackball() {
-  if (tamaruContainer) tamaruContainer.style.display = "none";
-}
-function showVirtualTrackball() {
-  if (tamaruContainer) tamaruContainer.style.display = "";
-}
-function pauseVirtualTrackball() {
-  tamaruPaused = true;
-}
-function resumeVirtualTrackball() {
-  tamaruPaused = false;
+  if (tamaruInstance) tamaruInstance.hide();
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   destroyVirtualTrackball,
   hideVirtualTrackball,
   initVirtualTrackball,
-  pauseVirtualTrackball,
-  resumeVirtualTrackball,
-  showVirtualTrackball,
   updateVirtualTrackballConfig
 });
 //# sourceMappingURL=main.js.map
