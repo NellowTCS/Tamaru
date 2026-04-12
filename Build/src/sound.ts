@@ -294,10 +294,11 @@ function setRollLevel(
   level: number,
   rampSec: number,
   speed: number,
+  intensity: number,
 ) {
   if (!rollGain || !rollMidFilt || !rollSrc) return;
   const t = c.currentTime;
-  const scaled = clamp01(level) * (0.032 + speed * 0.068);
+  const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
 
   rollGain.gain.cancelScheduledValues(t);
   rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 0.0001), t);
@@ -312,25 +313,30 @@ function setRollLevel(
   rollMidFilt.frequency.linearRampToValueAtTime(420 + speed * 980, t + rampSec);
 }
 
-function touchRollingSound(c: AudioContext, speed: number) {
+function touchRollingSound(c: AudioContext, speed: number, intensity: number) {
   rollIsActive = true;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   ensureRollingLayer(c);
-  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed);
+  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed, intensity);
 
   rollFadeTimer = setTimeout(
     () => {
       rollFadeTimer = null;
-      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed);
+      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
     },
     140 + Math.random() * 50,
   );
 }
 
-function stopRollingSound(c: AudioContext, speed: number, immediate: boolean) {
+function stopRollingSound(
+  c: AudioContext,
+  speed: number,
+  immediate: boolean,
+  intensity: number,
+) {
   rollIsActive = false;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
@@ -339,7 +345,7 @@ function stopRollingSound(c: AudioContext, speed: number, immediate: boolean) {
   if (!rollGain) return;
 
   const fadeOut = immediate ? 0.04 : 0.18 + (1 - speed) * 0.14;
-  setRollLevel(c, 0, fadeOut, speed);
+  setRollLevel(c, 0, fadeOut, speed, intensity);
 
   // Tear down the nodes entirely after fade
   const silenceMs = (fadeOut + 0.1) * 1000;
@@ -378,7 +384,7 @@ export function playSound(
     const speed = normSpeed(options?.speed);
 
     if (event === "spin") {
-      touchRollingSound(c, speed);
+      touchRollingSound(c, speed, rollScale);
       const now = performance.now();
       const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
       if (now - lastSpinAt < minGap) return;
@@ -391,7 +397,7 @@ export function playSound(
         break;
       case "release":
         playReleaseSound(c, t);
-        stopRollingSound(c, speed, true);
+        stopRollingSound(c, speed, true, rollScale);
         break;
       case "snap":
         playSnapSound(c, t);
@@ -401,7 +407,7 @@ export function playSound(
         break;
       case "stop":
         playStopSound(c, t, speed);
-        stopRollingSound(c, speed, false);
+        stopRollingSound(c, speed, false, rollScale);
         break;
     }
   } catch {

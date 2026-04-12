@@ -25,6 +25,7 @@ let tamaruPaused = false;
 let tamaruConfig: Required<TamaruConfig> | null = null;
 let tamaruState: TrackballState | null = null;
 let lastPointerSpinFeedbackAt = 0;
+let cleanupVisibilityHandlers: (() => void) | null = null;
 
 function applyThemeVars(vars: ThemeVars) {
   const root = document.documentElement;
@@ -104,34 +105,30 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     "#vt-trackball-area",
   ) as HTMLElement;
 
-  toggleBtn.addEventListener("click", () => {
-    const isMini = !container.classList.contains("vt-mini");
-    container.classList.toggle("vt-mini");
-    toggleBtn.textContent = container.classList.contains("vt-mini") ? "+" : "-";
-    // compute sizes based on config
+  const setWidgetSize = (sizePx: number) => {
+    container.style.width = sizePx + "px";
+    container.style.height = sizePx + "px";
+    trackballArea.style.width = sizePx + "px";
+    trackballArea.style.height = sizePx + "px";
+  };
+
+  const applyMiniState = (mini: boolean) => {
     const size = tamaruConfig ? tamaruConfig.size : 120;
-    if (isMini) {
-      // switch to mini: compute mini size as 40% of configured size, min 40px
-      const miniSize = Math.max(40, Math.round(size * 0.4));
-      container.style.width = miniSize + "px";
-      container.style.height = miniSize + "px";
-      trackballArea.style.width = miniSize + "px";
-      trackballArea.style.height = miniSize + "px";
-    } else {
-      // restore full size
-      container.style.width = size + "px";
-      container.style.height = size + "px";
-      trackballArea.style.width = size + "px";
-      trackballArea.style.height = size + "px";
-    }
+    const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
+    container.classList.toggle("vt-mini", mini);
+    toggleBtn.textContent = mini ? "+" : "-";
+    setWidgetSize(targetSize);
     snapToEdgeHandler();
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    const nextMini = !container.classList.contains("vt-mini");
+    applyMiniState(nextMini);
   });
 
   trackballArea.addEventListener("click", () => {
     if (container.classList.contains("vt-mini")) {
-      container.classList.remove("vt-mini");
-      toggleBtn.textContent = "-";
-      snapToEdgeHandler();
+      applyMiniState(false);
     }
   });
 
@@ -225,16 +222,42 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
 
+  const stopInertiaAndRolling = () => {
+    if (!tamaruState || !tamaruConfig) return;
+    const speed = Math.hypot(tamaruState.velX || 0, tamaruState.velY || 0);
+    tamaruState.velX = 0;
+    tamaruState.velY = 0;
+    if (speed > 0.05) {
+      feedback("stop", tamaruConfig, { speed });
+    }
+  };
+
+  const onVisibilityChange = () => {
+    if (document.hidden) stopInertiaAndRolling();
+  };
+
+  const onWindowBlur = () => {
+    stopInertiaAndRolling();
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("blur", onWindowBlur);
+  cleanupVisibilityHandlers = () => {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("blur", onWindowBlur);
+    cleanupVisibilityHandlers = null;
+  };
+
   const controls = container.querySelector("#vt-controls") as HTMLElement;
   let controlsHideTimeout: ReturnType<typeof setTimeout> | null = null;
-  container.addEventListener("mouseenter", () => {
+  trackballArea.addEventListener("mouseenter", () => {
     controlsHideTimeout = showControls(
       controls,
       controlsHideTimeout,
       setControlsVisible,
     );
   });
-  container.addEventListener("mouseleave", () => {
+  trackballArea.addEventListener("mouseleave", () => {
     controlsHideTimeout = hideControlsWithDelay(
       container,
       controls,
@@ -319,6 +342,7 @@ export function updateVirtualTrackballConfig(
 // destroy
 export function destroyVirtualTrackball(): void {
   if (!tamaruContainer) return;
+  cleanupVisibilityHandlers?.();
   // Stop animation
   if (tamaruAnimationFrame !== null) {
     cancelAnimationFrame(tamaruAnimationFrame);

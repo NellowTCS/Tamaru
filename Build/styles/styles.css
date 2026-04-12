@@ -7,6 +7,7 @@
     align-items: center;
     justify-content: center;
     user-select: none;
+    pointer-events: none;
     transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), width 0.3s ease, height 0.3s ease;
 }
 
@@ -25,6 +26,14 @@
     transition: opacity 0.2s, transform 0.2s;
     pointer-events: none;
     z-index: 20;
+}
+
+#vt-trackball-area,
+#vt-controls,
+#vt-controls .vt-btn,
+#vt-viewport,
+#vt-mini-icon {
+    pointer-events: auto;
 }
 
 #vt-controls.vt-controls-visible {

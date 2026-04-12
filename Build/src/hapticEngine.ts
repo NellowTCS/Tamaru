@@ -11,7 +11,13 @@ export function triggerHaptic(event: HapticEvent) {
   };
 
   const p = patterns[event];
+  const duration = typeof p === "number" ? p : (p as number[])[0];
 
-  if (typeof p === "number") tactusTrigger(p);
-  else tactusTrigger((p as number[])[0]);
+  try {
+    tactusTrigger(duration);
+  } catch {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(duration);
+    }
+  }
 }
