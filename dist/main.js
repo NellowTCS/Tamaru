@@ -1463,6 +1463,18 @@ var styles_default = `#vt-widget-container {
     pointer-events: auto;
 }
 
+#vt-widget-container.vt-stick-mode {
+    left: 50vw !important;
+    top: 50vh !important;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 99999999;
+}
+
+#vt-widget-container.vt-stick-mode #vt-controls {
+    display: none !important;
+}
+
 .vt-btn {
     width: 30px;
     height: 30px;
@@ -1587,6 +1599,7 @@ function createWidgetContainer() {
   container.id = "vt-widget-container";
   container.innerHTML = `
     <div id="vt-controls">
+      <div id="vt-stick-btn" class="vt-btn" title="Stick to Cursor">\u2316</div>
       <div id="vt-drag-handle" class="vt-btn" title="Drag to move">\u2725</div>
       <div id="vt-toggle-btn" class="vt-btn" title="Toggle Size">-</div>
     </div>
@@ -1676,7 +1689,10 @@ var DEFAULT_CONFIG = {
   friction: 0.92,
   sensitivity: 1.8,
   snapDistance: 80,
-  size: 120
+  size: 120,
+  stickMode: true,
+  stickModeTargetCycleKey: "Shift",
+  stickModeCycleSnap: true
 };
 
 // themes/default.json
@@ -1805,23 +1821,80 @@ function doSnapToEdge(container, currentLeft, currentTop, feedback2, snapDistanc
   feedback2("snap");
   return pos;
 }
+function isElementScrollable(el) {
+  if (el === document.body || el === document.documentElement) {
+    return document.body.scrollHeight > window.innerHeight || document.documentElement.scrollHeight > window.innerHeight || document.body.scrollWidth > window.innerWidth || document.documentElement.scrollWidth > window.innerWidth;
+  }
+  const style = window.getComputedStyle(el);
+  const overflowY = style.overflowY;
+  const overflowX = style.overflowX;
+  if ((overflowY === "auto" || overflowY === "scroll") && el.scrollHeight - el.clientHeight > 1) {
+    return true;
+  }
+  if ((overflowX === "auto" || overflowX === "scroll") && el.scrollWidth - el.clientWidth > 1) {
+    return true;
+  }
+  return false;
+}
+function getAllScrollableElements() {
+  const elements = document.querySelectorAll("*");
+  const scrollableElements = [];
+  elements.forEach((el) => {
+    if (el instanceof HTMLElement && isElementScrollable(el)) {
+      scrollableElements.push(el);
+    }
+  });
+  return scrollableElements;
+}
+function cycleScrollableTarget(dx, dy, currentTarget) {
+  const scrollableElements = getAllScrollableElements();
+  if (scrollableElements.length === 0) return null;
+  let currentIndex = scrollableElements.findIndex((el) => el === currentTarget);
+  if (currentIndex === -1) {
+    currentIndex = -1;
+  }
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0) {
+      currentIndex = (currentIndex + 1) % scrollableElements.length;
+    } else {
+      currentIndex = currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
+    }
+  } else {
+    if (dy > 0) {
+      currentIndex = (currentIndex + 1) % scrollableElements.length;
+    } else {
+      currentIndex = currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
+    }
+  }
+  const target = scrollableElements[currentIndex];
+  scrollableElements.forEach((el) => {
+    if (el.style) el.style.boxShadow = "";
+  });
+  if (target && target.style)
+    target.style.boxShadow = "inset 0 0 0 2px rgba(0, 150, 255, 0.7)";
+  setTimeout(() => {
+    if (target && target.style) target.style.boxShadow = "";
+  }, 1e3);
+  return target;
+}
 function findNearestScrollable(el) {
   let node = el;
   while (node && node !== document.body) {
-    const style = window.getComputedStyle(node);
-    const overflowY = style.overflowY;
-    const overflowX = style.overflowX;
-    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
-      return node;
-    }
-    if ((overflowX === "auto" || overflowX === "scroll") && node.scrollWidth > node.clientWidth) {
+    if (isElementScrollable(node)) {
       return node;
     }
     node = node.parentElement;
   }
   return null;
 }
-function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallbackContainer) {
+var stickScrollTarget = null;
+function setStickScrollTarget(target) {
+  stickScrollTarget = target;
+}
+function resolveEffectiveScrollable(target, scrollFallback, scrollFallbackContainer) {
+  if (stickScrollTarget) {
+    return stickScrollTarget;
+  }
   const nearest = findNearestScrollable(target);
   let scrollable = nearest;
   if (!scrollable) {
@@ -1836,6 +1909,14 @@ function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallb
       scrollable = null;
     }
   }
+  return scrollable;
+}
+function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallbackContainer) {
+  const scrollable = resolveEffectiveScrollable(
+    target,
+    scrollFallback,
+    scrollFallbackContainer
+  );
   if (!scrollable) {
     scrollLogger.warn("No scrollable target resolved. Aborting scroll.", {
       state: { dx, dy, mode, scrollFallback }
@@ -2389,6 +2470,62 @@ function createPhysicsLoop(state, isTrackballDragging, tamaruPaused2, applyMovem
   return physicsLoop;
 }
 
+// src/stickMode.ts
+function setupStickMode(stickBtn, container, options) {
+  let isPointerLocked = false;
+  const onMouseMove = (e) => {
+    if (!isPointerLocked) return;
+    options.onMove(e);
+  };
+  const onMouseWheel = (e) => {
+    if (!isPointerLocked) return;
+    options.onWheel(e);
+  };
+  const onPointerLockChange = () => {
+    if (document.pointerLockElement === container) {
+      stickLogger.info("Pointer locked. Stick mode activated.");
+      isPointerLocked = true;
+      document.addEventListener("mousemove", onMouseMove, false);
+      document.addEventListener("wheel", onMouseWheel, { passive: false });
+      options.onEnter();
+    } else {
+      stickLogger.info("Pointer unlocked. Stick mode deactivated.");
+      isPointerLocked = false;
+      document.removeEventListener("mousemove", onMouseMove, false);
+      document.removeEventListener("wheel", onMouseWheel, false);
+      options.onExit();
+    }
+  };
+  document.addEventListener("pointerlockchange", onPointerLockChange, false);
+  stickBtn.addEventListener("click", () => {
+    if (document.pointerLockElement !== container) {
+      if (typeof container.requestPointerLock !== "function") {
+        stickLogger.warn("Pointer lock not supported on this device/browser.");
+        return;
+      }
+      try {
+        container.requestPointerLock();
+      } catch (err) {
+        stickLogger.error("Failed to request pointer lock", {
+          state: { error: err }
+        });
+      }
+    } else {
+      document.exitPointerLock();
+    }
+  });
+  return () => {
+    document.removeEventListener(
+      "pointerlockchange",
+      onPointerLockChange,
+      false
+    );
+    if (isPointerLocked) {
+      document.exitPointerLock();
+    }
+  };
+}
+
 // src/main.ts
 var tamaruContainer = null;
 var tamaruAnimationFrame = null;
@@ -2475,20 +2612,20 @@ function initVirtualTrackball(config) {
     trackballArea.style.width = sizePx + "px";
     trackballArea.style.height = sizePx + "px";
   };
-  const applyMiniState = (mini) => {
+  const applyMiniState = (mini, skipSnap = false) => {
     const size = tamaruConfig ? tamaruConfig.size : 120;
     const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
     container.classList.toggle("vt-mini", mini);
     toggleBtn.textContent = mini ? "+" : "-";
     setWidgetSize(targetSize);
-    snapToEdgeHandler();
+    if (!skipSnap) snapToEdgeHandler();
   };
   toggleBtn.addEventListener("click", () => {
     const nextMini = !container.classList.contains("vt-mini");
     applyMiniState(nextMini);
   });
   trackballArea.addEventListener("click", () => {
-    if (container.classList.contains("vt-mini")) {
+    if (container.classList.contains("vt-mini") && !container.classList.contains("vt-stick-mode")) {
       applyMiniState(false);
     }
   });
@@ -2571,6 +2708,87 @@ function initVirtualTrackball(config) {
     (event, speed) => feedback(event, tamaruConfig, { speed })
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
+  let preStickLeft = 0;
+  let preStickTop = 0;
+  const stickBtn = container.querySelector("#vt-stick-btn");
+  const isMobileOrCoarse = window.matchMedia("(pointer: coarse)").matches;
+  if (!tamaruConfig.stickMode || isMobileOrCoarse) {
+    stickBtn.style.display = "none";
+  }
+  const cleanupStickMode = setupStickMode(
+    stickBtn,
+    container,
+    /* @__PURE__ */ (() => {
+      let currentStickTarget = null;
+      let lastCycleTime = 0;
+      let wheelAccX = 0;
+      let wheelAccY = 0;
+      const CYCLE_THRESHOLD = 50;
+      return {
+        onEnter: () => {
+          preStickLeft = currentLeft;
+          preStickTop = currentTop;
+          const size = tamaruConfig ? tamaruConfig.size : 120;
+          const miniSize = Math.max(40, Math.round(size * 0.4));
+          currentLeft = (window.innerWidth - miniSize) / 2;
+          currentTop = (window.innerHeight - miniSize) / 2;
+          container.style.left = currentLeft + "px";
+          container.style.top = currentTop + "px";
+          applyMiniState(true, true);
+          container.classList.add("vt-stick-mode");
+        },
+        onExit: () => {
+          currentLeft = preStickLeft;
+          currentTop = preStickTop;
+          container.style.left = currentLeft + "px";
+          container.style.top = currentTop + "px";
+          container.classList.remove("vt-stick-mode");
+          applyMiniState(false, false);
+          setStickScrollTarget(null);
+          currentStickTarget = null;
+        },
+        onMove: (e) => {
+          if (!tamaruConfig?.stickMode) return;
+          const dx = e.movementX;
+          const dy = e.movementY;
+          state.velX += dx * 0.5;
+          state.velY += dy * 0.5;
+        },
+        onWheel: (e) => {
+          if (!tamaruConfig?.stickMode) return;
+          const cycleKey = tamaruConfig.stickModeTargetCycleKey || "Shift";
+          const isModifierPressed = cycleKey === "Shift" && e.shiftKey || cycleKey === "Alt" && e.altKey || cycleKey === "Control" && e.ctrlKey || cycleKey === "Meta" && e.metaKey || cycleKey === "None" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
+          if (isModifierPressed) {
+            e.preventDefault();
+            wheelAccX += e.deltaX;
+            wheelAccY += e.deltaY;
+            const now = Date.now();
+            if (now - lastCycleTime > 300 && (Math.abs(wheelAccX) > CYCLE_THRESHOLD || Math.abs(wheelAccY) > CYCLE_THRESHOLD)) {
+              currentStickTarget = cycleScrollableTarget(
+                wheelAccX,
+                wheelAccY,
+                currentStickTarget
+              );
+              setStickScrollTarget(currentStickTarget);
+              if (currentStickTarget && tamaruConfig.stickModeCycleSnap !== false) {
+                currentStickTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                  inline: "center"
+                });
+              }
+              lastCycleTime = now;
+              wheelAccX = 0;
+              wheelAccY = 0;
+            }
+          } else {
+            wheelAccX = 0;
+            wheelAccY = 0;
+          }
+        }
+      };
+    })()
+  );
   const stopInertiaAndRolling = () => {
     if (!tamaruState || !tamaruConfig) return;
     const speed = Math.hypot(tamaruState.velX || 0, tamaruState.velY || 0);
@@ -2591,6 +2809,7 @@ function initVirtualTrackball(config) {
   cleanupVisibilityHandlers = () => {
     document.removeEventListener("visibilitychange", onVisibilityChange);
     window.removeEventListener("blur", onWindowBlur);
+    cleanupStickMode();
     cleanupVisibilityHandlers = null;
   };
   const controls = container.querySelector("#vt-controls");

@@ -13,6 +13,9 @@ interface TamaruConfig {
     sensitivity?: number;
     snapDistance?: number;
     size?: number;
+    stickMode?: boolean;
+    stickModeTargetCycleKey?: "Shift" | "Alt" | "Control" | "Meta" | "None";
+    stickModeCycleSnap?: boolean;
 }
 
 declare function initVirtualTrackball(config?: TamaruConfig): void;

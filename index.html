@@ -55,7 +55,7 @@
     }
 
     #config-panel {
-      width: 320px;
+      width: 400px;
       background: #0f1720;
       padding: 20px;
       border-radius: 0 12px 12px 0;
@@ -116,6 +116,57 @@
       background: #2563eb;
     }
 
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+    }
+
+    .btn-link {
+      white-space: nowrap;
+      display: inline-block;
+      padding: 8px 12px;
+      background: #3b82f6;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column-reverse;
+        padding: 0;
+        gap: 0;
+      }
+      #config-panel {
+        width: 100%;
+        border-radius: 0;
+        border-top: 1px solid #2d3748;
+        border-left: none;
+        max-height: 48vh;
+      }
+      .content-area {
+        border-radius: 0;
+        border: none;
+      }
+      .header-inner {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .btn-link {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+      }
+      header {
+        padding: 1rem 12px;
+      }
+      #content {
+        padding: 16px;
+      }
+    }
+
     .content-area {
       flex: 1;
       background: #1e293b;
@@ -131,18 +182,17 @@
 
 <body>
   <header>
-    <div style="display: flex; justify-content: space-between; align-items: start;">
+    <div class="header-inner">
       <div>
         <h1>Tamaru</h1>
         <div class="desc">
-          Drag the widget or use the trackball. This layout natively prevents scrolling so only the
-          trackball logic can scroll the container.
+          Drag the widget or use the trackball. 
+          Click the ⌖ icon for "Stick Mode" (Pointer Lock) to scroll purely using physical mouse movement 
+          (hold Shift and use the scroll wheel to target specific elements!).
         </div>
       </div>
       <div>
-        <a href="./docs/"
-          style="white-space: nowrap; display: inline-block; padding: 8px; background: #3b82f6; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px;">View
-          Documentation</a>
+        <a href="./docs/" class="btn-link">View Documentation</a>
       </div>
     </div>
   </header>
@@ -222,6 +272,26 @@
             </td>
           </tr>
           <tr>
+            <td>stickMode</td>
+            <td><input id="cfg-stickMode" type="checkbox" /></td>
+          </tr>
+          <tr>
+            <td>stickModeTargetCycleKey</td>
+            <td>
+              <select id="cfg-stickModeCycleKey">
+                <option>Shift</option>
+                <option>Alt</option>
+                <option>Control</option>
+                <option>Meta</option>
+                <option>None</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>stickModeCycleSnap</td>
+            <td><input id="cfg-stickModeCycleSnap" type="checkbox" /></td>
+          </tr>
+          <tr>
             <td>scrollFallback</td>
             <td>
               <select id="cfg-fallback">
@@ -250,7 +320,7 @@
       </div>
       <!-- DO NOT FORMAT THIS, it's only long so that the demo works properly -->
       <main id="scroll-area" class="content-area"
-         style="overflow: hidden; white-space: pre; border-radius: 12px 0 0 12px; border-top: none;">
+         style="overflow-y: scroll; white-space: pre; border-radius: 12px 0 0 12px; border-top: none;">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas eget tortor egestas, mattis metus non, placerat enim. Mauris odio sem, sodales sed nisi ut, tincidunt iaculis enim. Integer vitae purus leo. Vestibulum egestas mauris ut elit luctus, vel pretium sapien rutrum. Proin lobortis in sem sed tincidunt. Morbi varius tincidunt erat, id euismod nisl elementum vel. Nullam dolor purus, lacinia at rhoncus sit amet, luctus vitae magna. Ut sit amet magna eget sapien interdum tristique. Sed pharetra semper lectus non facilisis. Donec pellentesque ex at sodales porta. Duis odio libero, posuere ut rutrum eget, egestas condimentum mauris. Aenean eu enim ullamcorper, dictum arcu non, semper dui. Donec diam felis, tincidunt fringilla pharetra vitae, tristique in urna. Quisque vehicula maximus cursus. Quisque sollicitudin iaculis odio ut pellentesque. Vestibulum elit odio, aliquam at purus non, convallis placerat sem.
 
 Sed vel sapien ligula. Aenean euismod ut tellus et pretium. Aliquam auctor, eros vel semper lobortis, dui metus egestas sapien, tincidunt viverra est nunc quis purus. Ut vulputate massa ac massa faucibus, pretium consectetur dolor venenatis. Vestibulum tincidunt, metus et eleifend mollis, sem nulla placerat mauris, ut interdum odio erat eget mauris. Morbi gravida porttitor felis vel volutpat. Nunc lobortis massa sit amet lacus sodales pellentesque. Suspendisse vitae nibh sed est tempus semper. Donec faucibus, enim faucibus feugiat dignissim, elit turpis tincidunt urna, eget facilisis velit lacus tincidunt diam. Sed porttitor, ante aliquam aliquam dictum, nibh sapien porta elit, a pharetra nibh erat sit amet nibh. Etiam et nunc enim. Cras rhoncus libero vitae convallis feugiat. Morbi aliquam ullamcorper imperdiet. Cras ac turpis non risus sodales vestibulum eget at massa. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
@@ -286,6 +356,22 @@ Nam pretium, purus sed pretium accumsan, orci risus luctus risus, eget tempus pu
 Aliquam erat volutpat. Donec justo nunc, congue non ullamcorper ac, fringilla vitae dolor. Etiam congue pretium diam vel ultrices. Mauris ut velit quis nibh ornare pretium et non risus. Donec posuere turpis ante, sit amet bibendum ipsum gravida non. Suspendisse ornare nisl at arcu lacinia dignissim. Praesent tincidunt turpis congue, vehicula odio ac, dictum elit. Suspendisse sit amet ligula eros. Nunc eget nisi eget dui tincidunt dapibus eu quis magna.
 
 Praesent hendrerit augue vel nunc ultrices, et gravida tortor placerat. Nullam condimentum felis diam, vel pharetra orci porta ultrices. Fusce et convallis dui. Suspendisse nisi sapien, molestie at mollis a, cursus ac justo. Curabitur eget tempor ex. Quisque ullamcorper in nisi at ultricies. Duis vulputate dui sollicitudin pulvinar porta. Integer sit amet arcu vel urna dapibus vehicula in quis lorem. Morbi ullamcorper faucibus tellus vel posuere. Mauris fringilla semper nisi sed iaculis. Morbi tincidunt placerat purus, quis mattis nunc imperdiet mollis. Nulla viverra nec urna nec molestie. Mauris aliquet lacinia quam. Ut vitae magna tempor, tempus neque eu, condimentum ante. Aliquam non faucibus purus. Donec hendrerit aliquet augue, vel sagittis eros luctus non.
+
+<div style="height: 200px; width: 80%; overflow: auto; border: 2px solid #3b82f6; border-radius: 8px; padding: 12px; margin: 24px 0; background: #0f1720;">
+  <h3>Scrollable Box 1</h3>
+  <p>Here is some extra content that overflows to demonstrate how stick mode scroll cycling can target inner scrollable containers.</p>
+  <div style="height: 400px; background: linear-gradient(to bottom, #111, #333);"></div>
+  <p>End of Box 1</p>
+</div>
+
+<div
+  style="height: 200px; width: 80%; overflow: auto; border: 2px solid #8b5cf6; border-radius: 8px; padding: 12px; margin: 24px 0; background: #170f20;">
+  <h3>Scrollable Box 2</h3>
+  <p>Another scrollable box to test the cycle target logic! Cycle until you see this box light up!</p>
+  <div style="width: 800px; height: 100px; background: linear-gradient(to right, #222, #555);">Horizontal scroll test
+  </div>
+  <p>End of Box 2</p>
+</div>
 
 Nulla luctus ac metus sed tincidunt. Aenean nisi nisl, sagittis a quam vitae, laoreet dignissim nisi. Nullam ac tristique nulla. Duis nulla sem, dapibus vitae odio sed, eleifend euismod justo. Sed sollicitudin nibh et fermentum aliquam. Donec quis cursus leo. Nullam lacinia consectetur semper. Vestibulum efficitur justo a purus tempus, nec rhoncus metus semper. Phasellus id pharetra odio, vel cursus lorem. Morbi lobortis, lectus et tempor scelerisque, felis neque lacinia massa, non aliquam tortor nisi quis mauris. In pellentesque orci vel erat euismod tincidunt. Morbi auctor lectus vel dictum posuere. Ut facilisis tellus eu maximus molestie. Phasellus fermentum efficitur ligula vel tincidunt.
 
@@ -350,7 +436,7 @@ Curabitur elit ante, vestibulum id nisi ut, tincidunt facilisis nisi. Cras dui q
 Phasellus ac lectus fringilla, aliquam lectus vel, mattis sem. In hac habitasse platea dictumst. Morbi vel ligula vitae lacus vestibulum mollis. Suspendisse potenti. Aliquam elementum erat ex, id porta dui consectetur sed. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In hac habitasse platea dictumst. Nulla sit amet mollis erat. Proin ornare maximus lorem non sollicitudin. Nulla quis est sollicitudin lacus efficitur sagittis faucibus ut tellus. Nam viverra ac nisl quis dictum. Praesent congue malesuada dapibus. Nunc congue, augue id tincidunt vehicula, eros augue pharetra tellus, vitae lobortis dui quam tempor libero.
 
 Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat, neque eu sodales auctor, mauris nunc tristique tortor, sit amet cursus lacus sem ac libero. Quisque quis tincidunt augue. Aliquam posuere quis quam in faucibus. Duis commodo tempor tempor. Praesent pellentesque id magna eget pulvinar. Praesent neque turpis, imperdiet non luctus eget, molestie in tortor.
-      </main>
+</main>
 </div>
   <script type="module">
     import { initVirtualTrackball, updateVirtualTrackballConfig, destroyVirtualTrackball } from './dist/main.mjs';
@@ -390,6 +476,9 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
         sensitivity: parseFloat($('cfg-sensitivity').value),
         snapDistance: parseInt($('cfg-snap').value, 10),
         size: parseInt($('cfg-size').value, 10),
+        stickMode: $('cfg-stickMode').checked,
+        stickModeTargetCycleKey: $('cfg-stickModeCycleKey').value,
+        stickModeCycleSnap: $('cfg-stickModeCycleSnap').checked,
       };
       updateVirtualTrackballConfig(cfg);
     }
@@ -409,11 +498,14 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-sensitivity').value = DEFAULTS.sensitivity;
     $('cfg-snap').value = DEFAULTS.snapDistance;
     $('cfg-size').value = DEFAULTS.size;
+    $('cfg-stickMode').checked = DEFAULTS.stickMode ?? true;
+    $('cfg-stickModeCycleKey').value = DEFAULTS.stickModeTargetCycleKey ?? "Shift";
+    $('cfg-stickModeCycleSnap').checked = DEFAULTS.stickModeCycleSnap ?? true;
     $('cfg-fallback').value = DEFAULTS.scrollFallback;
     $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
 
     // attach change listeners
-    const props = ['cfg-sound', 'cfg-roll-level', 'cfg-haptics', 'cfg-theme', 'cfg-enable-custom', 'cfg-sphereColor', 'cfg-textureColor', 'cfg-glow', 'cfg-miniIcon', 'cfg-scroll', 'cfg-friction', 'cfg-sensitivity', 'cfg-snap', 'cfg-size', 'cfg-fallback', 'cfg-fallback-selector'];
+    const props = ['cfg-sound', 'cfg-roll-level', 'cfg-haptics', 'cfg-theme', 'cfg-enable-custom', 'cfg-sphereColor', 'cfg-textureColor', 'cfg-glow', 'cfg-miniIcon', 'cfg-scroll', 'cfg-friction', 'cfg-sensitivity', 'cfg-snap', 'cfg-size', 'cfg-stickMode', 'cfg-stickModeCycleKey', 'cfg-stickModeCycleSnap', 'cfg-fallback', 'cfg-fallback-selector'];
     props.forEach(id => $(id).addEventListener('input', () => readAndApply()));
 
     function getInitialConfig() {
@@ -435,6 +527,9 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
         sensitivity: parseFloat($('cfg-sensitivity').value),
         snapDistance: parseInt($('cfg-snap').value, 10),
         size: parseInt($('cfg-size').value, 10),
+        stickMode: $('cfg-stickMode').checked,
+        stickModeTargetCycleKey: $('cfg-stickModeCycleKey').value,
+        stickModeCycleSnap: $('cfg-stickModeCycleSnap').checked,
       };
     }
 

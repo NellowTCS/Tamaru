@@ -247,6 +247,19 @@ An object containing a set of CSS properties that override the active <code>them
 Type: <code>number</code><br>
 Default: <code>120</code><br>
 Fixed square dimensions of the injected container in pixels.</p>
+<h3 id="stick-mode">Stick Mode</h3>
+<p><code>stickMode</code><br>
+Type: <code>boolean</code><br>
+Default: <code>true</code><br>
+Enables “Stick Mode” (Pointer Lock) via the crosshair button. When active, mouse movement directly scrolls the active target.</p>
+<p><code>stickModeTargetCycleKey</code><br>
+Type: <code>&quot;Shift&quot; | &quot;Alt&quot; | &quot;Control&quot; | &quot;Meta&quot; | &quot;None&quot;</code><br>
+Default: <code>&quot;Shift&quot;</code><br>
+The modifier key that, when held in Stick Mode, allows the scroll wheel to cycle through scrollable elements on the page instead of scrolling them.</p>
+<p><code>stickModeCycleSnap</code><br>
+Type: <code>boolean</code><br>
+Default: <code>true</code><br>
+Whether the window should automatically perform a smooth scroll into targeting view (<code>scrollIntoView</code>) on the newly selected container when cycling targets.</p>
 <h3 id="physics-and-interaction">Physics and Interaction</h3>
 <p><code>scrollMode</code><br>
 Type: <code>&quot;document&quot; | &quot;nearest&quot; | &quot;container&quot;</code><br>
@@ -334,6 +347,10 @@ If <code>&quot;nearest&quot;</code> mode fails to identify an overflowing ancest
       
         <li class="toc-item toc-level-3">
           <a href="#theming-and-visuals" class="toc-link">Theming and Visuals</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#stick-mode" class="toc-link">Stick Mode</a>
         </li>
       
         <li class="toc-item toc-level-3">
