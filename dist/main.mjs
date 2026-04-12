@@ -188,6 +188,24 @@ function injectStyleTag(styles) {
     style.textContent = styles;
     document.head.appendChild(style);
   }
+  if (!document.getElementById("vt-scrollbar-hide")) {
+    const hideStyle = document.createElement("style");
+    hideStyle.id = "vt-scrollbar-hide";
+    hideStyle.textContent = `
+      [data-vt-hide-scrollbar="1"] {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      [data-vt-hide-scrollbar="1"]::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+        background: transparent;
+      }
+    `;
+    document.head.appendChild(hideStyle);
+  }
 }
 
 // src/trackball.ts
@@ -284,11 +302,11 @@ var glossy_default = {
   name: "Glossy",
   author: "NellowTCS",
   desc: "Glossy light theme.",
-  sphereColor: "#e0e0e0",
-  textureColor: "#bdbdbd",
-  shadingLight: "rgba(255,255,255,0.8)",
-  shadingDark: "rgba(0,0,0,0.5)",
-  glow: "#ffffff",
+  sphereColor: "#f2f4f8",
+  textureColor: "#c8d0da",
+  shadingLight: "rgba(255,255,255,0.95)",
+  shadingDark: "rgba(8,16,30,0.64)",
+  glow: "#f8fbff",
   miniIcon: "#ffffff"
 };
 
@@ -305,19 +323,51 @@ var metal_default = {
   miniIcon: "#e0e0e0"
 };
 
+// themes/neon.json
+var neon_default = {
+  name: "Neon",
+  author: "NellowTCS",
+  desc: "Neon theme.",
+  sphereColor: "#101a3a",
+  textureColor: "#1f2e66",
+  shadingLight: "rgba(120,255,250,0.72)",
+  shadingDark: "rgba(1,7,23,0.92)",
+  glow: "#2ffcff",
+  miniIcon: "#6dff88"
+};
+
+// themes/sunset.json
+var sunset_default = {
+  name: "Sunset",
+  author: "NellowTCS",
+  desc: "Dusk and sunset theme.",
+  sphereColor: "#5f2d20",
+  textureColor: "#c4542d",
+  shadingLight: "rgba(255,220,170,0.62)",
+  shadingDark: "rgba(33,12,8,0.86)",
+  glow: "#ffb46a",
+  miniIcon: "#ffd4ad"
+};
+
 // src/themeLoader.ts
 var themes = {
   default: default_default,
   aqua: aqua_default,
   red: red_default,
   glossy: glossy_default,
-  metal: metal_default
+  metal: metal_default,
+  neon: neon_default,
+  sunset: sunset_default
 };
 function updateTexture(texture, x, y) {
   texture.style.backgroundPosition = `${x}px ${y}px`;
 }
 
 // src/scrollEngine.ts
+function markScrollbarHidden(el) {
+  if (!el) return;
+  el.setAttribute("data-vt-hide-scrollbar", "1");
+}
 function doSnapToEdge(container, currentLeft, currentTop, feedback2, snapDistance) {
   const rect = container.getBoundingClientRect();
   const pos = snapToEdge(
@@ -366,6 +416,11 @@ function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallb
     }
   }
   if (!scrollable) return;
+  markScrollbarHidden(scrollable);
+  if (scrollable === document.documentElement || scrollable === document.body) {
+    markScrollbarHidden(document.documentElement);
+    markScrollbarHidden(document.body);
+  }
   switch (mode) {
     case "page":
       if (scrollable === document.documentElement || scrollable === document.body) {
@@ -467,7 +522,20 @@ function triggerHaptic(duration = HAPTIC_DURATION_MS) {
 }
 
 // src/hapticEngine.ts
+var lastHapticAt = 0;
+function isIOSLike() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+  return /iPad|iPhone|iPod/i.test(ua) || platform === "MacIntel" && maxTouchPoints > 1;
+}
 function triggerHaptic2(event) {
+  if (typeof document !== "undefined" && document.hidden) return;
+  const minGapMs = event === "spin" ? 120 : 35;
+  const now = performance.now();
+  if (now - lastHapticAt < minGapMs) return;
+  lastHapticAt = now;
   const patterns = {
     grab: 40,
     release: 25,
@@ -478,6 +546,10 @@ function triggerHaptic2(event) {
   const p = patterns[event];
   const duration = typeof p === "number" ? p : p[0];
   try {
+    if (!isIOSLike() && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(duration);
+      return;
+    }
     triggerHaptic(duration);
   } catch {
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
@@ -498,6 +570,7 @@ var rollHiFilt = null;
 var rollShaper = null;
 var rollGain = null;
 var rollFadeTimer = null;
+var lastRollTouchAt = 0;
 var lastSpinAt = 0;
 var rollIsActive = false;
 var SPIN_MIN_INTERVAL_MS = 22;
@@ -565,14 +638,16 @@ function ensureRollingBuf(c) {
   const len = Math.floor(c.sampleRate * 2.2);
   const b = c.createBuffer(1, len, c.sampleRate);
   const d = b.getChannelData(0);
-  let lp = 0, hp = 0, prev = 0;
+  let lp = 0;
+  let mid = 0;
+  let prevMid = 0;
   for (let i = 0; i < len; i++) {
     const w = Math.random() * 2 - 1;
-    lp = lp * 0.94 + w * 0.06;
-    const mid = w - lp;
-    hp = 0.97 * (hp + mid - prev);
-    prev = mid;
-    d[i] = mid * 0.55 + hp * 0.3 + w * 0.15;
+    lp = lp * 0.97 + w * 0.03;
+    mid = mid * 0.9 + (w - lp) * 0.1;
+    const hi = 0.95 * (prevMid - mid);
+    prevMid = mid;
+    d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
   }
   const fade = Math.floor(c.sampleRate * 0.04);
   for (let i = 0; i < fade; i++) {
@@ -696,12 +771,12 @@ function ensureRollingLayer(c) {
   rollSrc.playbackRate.value = 1;
   rollMidFilt = c.createBiquadFilter();
   rollMidFilt.type = "bandpass";
-  rollMidFilt.frequency.value = 800;
-  rollMidFilt.Q.value = 0.6;
+  rollMidFilt.frequency.value = 620;
+  rollMidFilt.Q.value = 0.48;
   rollHiFilt = c.createBiquadFilter();
   rollHiFilt.type = "highshelf";
-  rollHiFilt.frequency.value = 2200;
-  rollHiFilt.gain.value = 3;
+  rollHiFilt.frequency.value = 1800;
+  rollHiFilt.gain.value = -2;
   rollShaper = c.createWaveShaper();
   rollShaper.curve = makeShaperCurve(5);
   rollShaper.oversample = "2x";
@@ -718,40 +793,55 @@ function setRollLevel(c, level, rampSec, speed, intensity) {
   if (!rollGain || !rollMidFilt || !rollSrc) return;
   const t = c.currentTime;
   const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
+  const gainTC = Math.max(0.01, rampSec * 0.45);
+  const rateTC = Math.max(0.015, rampSec * 0.38);
+  const freqTC = Math.max(0.012, rampSec * 0.35);
   rollGain.gain.cancelScheduledValues(t);
   rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 1e-4), t);
-  rollGain.gain.linearRampToValueAtTime(Math.max(1e-4, scaled), t + rampSec);
+  rollGain.gain.setTargetAtTime(Math.max(1e-4, scaled), t, gainTC);
   rollSrc.playbackRate.cancelScheduledValues(t);
   rollSrc.playbackRate.setValueAtTime(rollSrc.playbackRate.value, t);
-  rollSrc.playbackRate.linearRampToValueAtTime(0.55 + speed * 1.1, t + rampSec);
+  rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
   rollMidFilt.frequency.cancelScheduledValues(t);
   rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
-  rollMidFilt.frequency.linearRampToValueAtTime(420 + speed * 980, t + rampSec);
+  rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
 }
 function touchRollingSound(c, speed, intensity) {
+  lastRollTouchAt = performance.now();
   rollIsActive = true;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   ensureRollingLayer(c);
-  setRollLevel(c, 1, 0.035 + (1 - speed) * 0.045, speed, intensity);
-  rollFadeTimer = setTimeout(
-    () => {
-      rollFadeTimer = null;
-      if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
-    },
-    140 + Math.random() * 50
-  );
+  const attackSec = 0.045 + (1 - speed) * 0.07;
+  setRollLevel(c, 1, attackSec, speed, intensity);
+  const idleBeforeFadeMs = 220;
+  const scheduleFadeCheck = (delayMs) => {
+    rollFadeTimer = setTimeout(
+      () => {
+        const idleMs = performance.now() - lastRollTouchAt;
+        if (rollIsActive && idleMs < idleBeforeFadeMs) {
+          scheduleFadeCheck(idleBeforeFadeMs - idleMs + 20);
+          return;
+        }
+        rollFadeTimer = null;
+        if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
+      },
+      Math.max(40, delayMs)
+    );
+  };
+  scheduleFadeCheck(idleBeforeFadeMs);
 }
 function stopRollingSound(c, speed, immediate, intensity) {
   rollIsActive = false;
+  lastRollTouchAt = 0;
   if (rollFadeTimer) {
     clearTimeout(rollFadeTimer);
     rollFadeTimer = null;
   }
   if (!rollGain) return;
-  const fadeOut = immediate ? 0.04 : 0.18 + (1 - speed) * 0.14;
+  const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
   setRollLevel(c, 0, fadeOut, speed, intensity);
   const silenceMs = (fadeOut + 0.1) * 1e3;
   setTimeout(() => {

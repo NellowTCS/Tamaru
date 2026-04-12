@@ -1,4 +1,4 @@
-type TamaruTheme = "default" | "aqua" | "red" | "glossy" | "metal";
+type TamaruTheme = "default" | "aqua" | "red" | "glossy" | "metal" | "neon" | "sunset";
 type TamaruScrollMode = "page" | "nearest" | "horizontal" | "momentum";
 interface TamaruConfig {
     sound?: boolean;
