@@ -37,7 +37,7 @@ jobs:
           cp -r Demo/* gh-pages-root/
           # Docs at docs/
           mkdir -p gh-pages-root/docs
-          cp -r Docs/dist/* gh-pages-root/docs/
+          cp -r Docs/site/* gh-pages-root/docs/
           # Dist at dist/
           mkdir -p gh-pages-root/dist
           cp -r Build/dist/* gh-pages-root/dist/
