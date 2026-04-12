@@ -1,26 +1,5 @@
-import { SoundEvent } from "./types";
+import { SoundEvent, TamaruConfig } from "./types";
 import { triggerHaptic } from "./hapticEngine";
-import { TamaruConfig } from "./types";
-
-let audioCtx: AudioContext | null = null;
-let masterGain: GainNode | null = null;
-let compressor: DynamicsCompressorNode | null = null;
-let noiseBuf: AudioBuffer | null = null;
-let rollingBuf: AudioBuffer | null = null;
-
-let rollSrc: AudioBufferSourceNode | null = null;
-let rollMidFilt: BiquadFilterNode | null = null;
-let rollHiFilt: BiquadFilterNode | null = null;
-let rollShaper: WaveShaperNode | null = null;
-let rollGain: GainNode | null = null;
-let rollFadeTimer: ReturnType<typeof setTimeout> | null = null;
-let lastRollTouchAt = 0;
-
-let lastSpinAt = 0;
-let rollIsActive = false;
-
-const SPIN_MIN_INTERVAL_MS = 22;
-const SOUND_VAR = 0.12;
 
 type FilterType = "bandpass" | "lowpass" | "highpass" | "highshelf";
 type WindowWithWebkitAudio = Window & {
@@ -28,408 +7,533 @@ type WindowWithWebkitAudio = Window & {
 };
 type SoundPlaybackOptions = { speed?: number };
 
-function getAudioContext() {
-  if (typeof window === "undefined") return null;
-  if (!audioCtx) {
-    const w = window as WindowWithWebkitAudio;
-    const Ctor = globalThis.AudioContext || w.webkitAudioContext;
-    if (!Ctor) return null;
-    const c = new Ctor();
-    audioCtx = c;
-    compressor = c.createDynamicsCompressor();
-    compressor.threshold.value = -18;
-    compressor.knee.value = 24;
-    compressor.ratio.value = 4;
-    compressor.attack.value = 0.003;
-    compressor.release.value = 0.22;
-    masterGain = c.createGain();
-    masterGain.gain.value = 0.42;
-    compressor.connect(masterGain);
-    masterGain.connect(c.destination);
+const SPIN_MIN_INTERVAL_MS = 22;
+const SOUND_VAR = 0.12;
+
+class AudioEngine {
+  private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private compressor: DynamicsCompressorNode | null = null;
+  private noiseBuf: AudioBuffer | null = null;
+  private rollingBuf: AudioBuffer | null = null;
+
+  // Rolling continuous sub-graph
+  private rollSrc: AudioBufferSourceNode | null = null;
+  private rollMidFilt: BiquadFilterNode | null = null;
+  private rollHiFilt: BiquadFilterNode | null = null;
+  private rollShaper: WaveShaperNode | null = null;
+  private rollGain: GainNode | null = null;
+  private rollFadeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private lastRollTouchAt = 0;
+  private lastSpinAt = 0;
+  private rollIsActive = false;
+
+  public getContext(): AudioContext | null {
+    if (typeof window === "undefined") return null;
+    if (!this.ctx) {
+      const w = window as WindowWithWebkitAudio;
+      const Ctor = globalThis.AudioContext || w.webkitAudioContext;
+      if (!Ctor) return null;
+      this.ctx = new Ctor();
+
+      this.compressor = this.ctx.createDynamicsCompressor();
+      this.compressor.threshold.value = -18;
+      this.compressor.knee.value = 24;
+      this.compressor.ratio.value = 4;
+      this.compressor.attack.value = 0.003;
+      this.compressor.release.value = 0.22;
+
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.42;
+
+      this.compressor.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
+    }
+    return this.ctx;
   }
-  return audioCtx;
-}
 
-function out() {
-  return compressor;
-}
-function r(v: number, amt = SOUND_VAR) {
-  return v * (1 + (Math.random() - 0.5) * 2 * amt);
-}
-function jt(t: number, s = 0.002) {
-  return t + (Math.random() - 0.5) * s;
-}
-function clamp01(v: number) {
-  return Math.max(0, Math.min(1, v));
-}
-function normSpeed(s?: number) {
-  return clamp01((s ?? 10) / 18);
-}
-
-function tryResume(c: AudioContext) {
-  if (c.state === "suspended") void c.resume().catch(() => {});
-}
-
-function makeShaperCurve(amount: number) {
-  const n = 256,
-    curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i * 2) / n - 1;
-    curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
+  private tryResume() {
+    if (this.ctx?.state === "suspended") {
+      void this.ctx.resume().catch(() => {});
+    }
   }
-  return curve;
-}
 
-function ensureNoiseBuf(c: AudioContext) {
-  if (noiseBuf) return noiseBuf;
-  const len = Math.floor(c.sampleRate * 0.5);
-  const b = c.createBuffer(1, len, c.sampleRate);
-  const d = b.getChannelData(0);
-  let lp = 0;
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1;
-    lp = lp * 0.85 + w * 0.15;
-    d[i] = w * 0.6 + lp * 0.4;
+  private out() {
+    return this.compressor!;
   }
-  noiseBuf = b;
-  return b;
-}
 
-function ensureRollingBuf(c: AudioContext) {
-  if (rollingBuf) return rollingBuf;
-  const len = Math.floor(c.sampleRate * 2.2);
-  const b = c.createBuffer(1, len, c.sampleRate);
-  const d = b.getChannelData(0);
-  let lp = 0;
-  let mid = 0;
-  let prevMid = 0;
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1;
-    lp = lp * 0.97 + w * 0.03;
-    mid = mid * 0.9 + (w - lp) * 0.1;
-    const hi = 0.95 * (prevMid - mid);
-    prevMid = mid;
-    d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
+  // Utilities
+  private appliedRandomVariation(v: number, amt = SOUND_VAR) {
+    return v * (1 + (Math.random() - 0.5) * 2 * amt);
   }
-  // Smooth loop seam
-  const fade = Math.floor(c.sampleRate * 0.04);
-  for (let i = 0; i < fade; i++) {
-    const t = i / fade;
-    d[i] *= t;
-    d[len - 1 - i] *= t;
+
+  private jitterTime(t: number, s = 0.002) {
+    return t + (Math.random() - 0.5) * s;
   }
-  rollingBuf = b;
-  return b;
-}
 
-function env(g: GainNode, t: number, peak: number, dur: number, atk = 0.003) {
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(peak, t + atk);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-}
+  private clamp01(v: number) {
+    return Math.max(0, Math.min(1, v));
+  }
 
-function noiseBurst(
-  c: AudioContext,
-  t: number,
-  dur: number,
-  peak: number,
-  ftype: FilterType,
-  freq: number,
-  q = 0.9,
-) {
-  const src = c.createBufferSource();
-  src.buffer = ensureNoiseBuf(c);
-  const f = c.createBiquadFilter();
-  f.type = ftype as BiquadFilterType;
-  f.frequency.value = freq;
-  f.Q.value = q;
-  const g = c.createGain();
-  env(g, t, peak, dur);
-  src.connect(f);
-  f.connect(g);
-  g.connect(out()!);
-  src.start(t);
-  src.stop(t + dur + 0.02);
-}
+  private normSpeed(s?: number) {
+    return this.clamp01((s ?? 10) / 18);
+  }
 
-function toneBurst(
-  c: AudioContext,
-  t: number,
-  dur: number,
-  peak: number,
-  type: OscillatorType,
-  f0: number,
-  f1?: number,
-) {
-  const osc = c.createOscillator(),
-    g = c.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(f0, t);
-  if (f1 != null)
-    osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
-  env(g, t, peak, dur, 0.004);
-  osc.connect(g);
-  g.connect(out()!);
-  osc.start(t);
-  osc.stop(t + dur + 0.02);
-}
+  private makeShaperCurve(amount: number) {
+    const n = 256,
+      curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((Math.PI + amount) * x) / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
+  }
 
-// Per-event sounds
+  private ensureNoiseBuf() {
+    if (this.noiseBuf || !this.ctx) return this.noiseBuf!;
+    const len = Math.floor(this.ctx.sampleRate * 0.5);
+    const b = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = b.getChannelData(0);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      lp = lp * 0.85 + w * 0.15;
+      d[i] = w * 0.6 + lp * 0.4;
+    }
+    this.noiseBuf = b;
+    return b;
+  }
 
-function playGrabSound(c: AudioContext, t: number) {
-  noiseBurst(c, t, r(0.006), r(0.22), "highpass", r(3200), r(0.6));
-  noiseBurst(c, t + 0.003, r(0.045), r(0.12), "bandpass", r(680), r(0.7));
-  toneBurst(c, jt(t, 0.001), r(0.075), r(0.07), "sine", r(145), r(90));
-  noiseBurst(c, t + 0.008, r(0.06), r(0.055), "lowpass", r(280), r(0.5));
-}
+  private ensureRollingBuf() {
+    if (this.rollingBuf || !this.ctx) return this.rollingBuf!;
+    const len = Math.floor(this.ctx.sampleRate * 2.2);
+    const b = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = b.getChannelData(0);
+    let lp = 0;
+    let mid = 0;
+    let prevMid = 0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      lp = lp * 0.97 + w * 0.03;
+      mid = mid * 0.9 + (w - lp) * 0.1;
+      const hi = 0.95 * (prevMid - mid);
+      prevMid = mid;
+      d[i] = lp * 0.45 + mid * 0.42 + hi * 0.13;
+    }
+    const fade = Math.floor(this.ctx.sampleRate * 0.04);
+    for (let i = 0; i < fade; i++) {
+      const t = i / fade;
+      d[i] *= t;
+      d[len - 1 - i] *= t;
+    }
+    this.rollingBuf = b;
+    return b;
+  }
 
-function playReleaseSound(c: AudioContext, t: number) {
-  noiseBurst(c, t, r(0.005), r(0.15), "highpass", r(2800), r(0.55));
-  noiseBurst(c, t + 0.003, r(0.032), r(0.085), "bandpass", r(600), r(0.65));
-  toneBurst(c, jt(t, 0.001), r(0.06), r(0.04), "sine", r(130), r(80));
-}
+  private env(g: GainNode, t: number, peak: number, dur: number, atk = 0.003) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + atk);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  }
 
-function playSnapSound(c: AudioContext, t: number) {
-  noiseBurst(c, t, r(0.004), r(0.35), "highpass", r(5000), r(0.5));
-  noiseBurst(c, t + 0.001, r(0.018), r(0.22), "bandpass", r(1800), r(1.1));
-  toneBurst(c, jt(t, 0.0005), r(0.055), r(0.11), "triangle", r(380), r(160));
-  noiseBurst(c, t + 0.012, r(0.022), r(0.09), "bandpass", r(1100), r(0.8));
-}
+  private noiseBurst(
+    t: number,
+    dur: number,
+    peak: number,
+    ftype: FilterType,
+    freq: number,
+    q = 0.9,
+  ) {
+    if (!this.ctx) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.ensureNoiseBuf();
+    const f = this.ctx.createBiquadFilter();
+    f.type = ftype as BiquadFilterType;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = this.ctx.createGain();
+    this.env(g, t, peak, dur);
 
-function playSpinTick(c: AudioContext, t: number, speed: number) {
-  const fc = 380 + speed * 560 + (Math.random() - 0.5) * 180;
-  const pk = 0.028 + speed * 0.038;
-  noiseBurst(c, t, r(0.009), r(pk), "bandpass", fc, r(1.4));
-  if (Math.random() < 0.35) {
-    toneBurst(
-      c,
-      jt(t, 0.001),
-      r(0.012),
-      r(0.012),
-      "sine",
-      r(200 + speed * 120),
+    src.connect(f);
+    f.connect(g);
+    g.connect(this.out());
+
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+
+  private toneBurst(
+    t: number,
+    dur: number,
+    peak: number,
+    type: OscillatorType,
+    f0: number,
+    f1?: number,
+  ) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator(),
+      g = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f0, t);
+    if (f1 != null) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    }
+    this.env(g, t, peak, dur, 0.004);
+
+    osc.connect(g);
+    g.connect(this.out());
+
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  // Pre-configured sounds
+  private playGrabSound(t: number) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(0.006),
+      this.appliedRandomVariation(0.22),
+      "highpass",
+      this.appliedRandomVariation(3200),
+      this.appliedRandomVariation(0.6),
     );
-  }
-}
-
-function playStopSound(c: AudioContext, t: number, speed: number) {
-  // Inertia decay: duration scales with speed
-  const dur = 0.08 + speed * 0.18;
-  noiseBurst(
-    c,
-    t,
-    r(dur * 0.6),
-    r(0.08 + speed * 0.06),
-    "bandpass",
-    r(320 + speed * 140),
-    r(0.7),
-  );
-  toneBurst(
-    c,
-    jt(t, 0.002),
-    r(dur * 0.9),
-    r(0.055),
-    "sine",
-    r(95 + speed * 55),
-    r(35),
-  );
-  noiseBurst(
-    c,
-    t + dur * 0.3,
-    r(dur * 0.5),
-    r(0.035),
-    "lowpass",
-    r(180),
-    r(0.45),
-  );
-  if (speed > 0.4) {
-    // Secondary bearing settle at medium/high speed
-    noiseBurst(
-      c,
-      t + dur * 0.55,
-      r(dur * 0.35),
-      r(0.02),
+    this.noiseBurst(
+      t + 0.003,
+      this.appliedRandomVariation(0.045),
+      this.appliedRandomVariation(0.12),
       "bandpass",
-      r(260),
-      r(0.6),
+      this.appliedRandomVariation(680),
+      this.appliedRandomVariation(0.7),
+    );
+    this.toneBurst(
+      this.jitterTime(t, 0.001),
+      this.appliedRandomVariation(0.075),
+      this.appliedRandomVariation(0.07),
+      "sine",
+      this.appliedRandomVariation(145),
+      this.appliedRandomVariation(90),
+    );
+    this.noiseBurst(
+      t + 0.008,
+      this.appliedRandomVariation(0.06),
+      this.appliedRandomVariation(0.055),
+      "lowpass",
+      this.appliedRandomVariation(280),
+      this.appliedRandomVariation(0.5),
     );
   }
-}
 
-function ensureRollingLayer(c: AudioContext) {
-  if (rollSrc) return;
-
-  rollSrc = c.createBufferSource();
-  rollSrc.buffer = ensureRollingBuf(c);
-  rollSrc.loop = true;
-  rollSrc.playbackRate.value = 1.0;
-
-  rollMidFilt = c.createBiquadFilter();
-  rollMidFilt.type = "bandpass";
-  rollMidFilt.frequency.value = 620;
-  rollMidFilt.Q.value = 0.48;
-
-  rollHiFilt = c.createBiquadFilter();
-  rollHiFilt.type = "highshelf";
-  rollHiFilt.frequency.value = 1800;
-  rollHiFilt.gain.value = -2;
-
-  rollShaper = c.createWaveShaper();
-  rollShaper.curve = makeShaperCurve(5);
-  rollShaper.oversample = "2x";
-
-  rollGain = c.createGain();
-  rollGain.gain.value = 0.0001;
-
-  rollSrc.connect(rollMidFilt);
-  rollMidFilt.connect(rollHiFilt);
-  rollHiFilt.connect(rollShaper);
-  rollShaper.connect(rollGain);
-  rollGain.connect(out()!);
-
-  rollSrc.start();
-}
-
-function setRollLevel(
-  c: AudioContext,
-  level: number,
-  rampSec: number,
-  speed: number,
-  intensity: number,
-) {
-  if (!rollGain || !rollMidFilt || !rollSrc) return;
-  const t = c.currentTime;
-  const scaled = clamp01(level) * clamp01(intensity) * (0.032 + speed * 0.068);
-  const gainTC = Math.max(0.01, rampSec * 0.45);
-  const rateTC = Math.max(0.015, rampSec * 0.38);
-  const freqTC = Math.max(0.012, rampSec * 0.35);
-
-  rollGain.gain.cancelScheduledValues(t);
-  rollGain.gain.setValueAtTime(Math.max(rollGain.gain.value, 0.0001), t);
-  rollGain.gain.setTargetAtTime(Math.max(0.0001, scaled), t, gainTC);
-
-  rollSrc.playbackRate.cancelScheduledValues(t);
-  rollSrc.playbackRate.setValueAtTime(rollSrc.playbackRate.value, t);
-  rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
-
-  rollMidFilt.frequency.cancelScheduledValues(t);
-  rollMidFilt.frequency.setValueAtTime(rollMidFilt.frequency.value, t);
-  rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
-}
-
-function touchRollingSound(c: AudioContext, speed: number, intensity: number) {
-  lastRollTouchAt = performance.now();
-  rollIsActive = true;
-  if (rollFadeTimer) {
-    clearTimeout(rollFadeTimer);
-    rollFadeTimer = null;
+  private playReleaseSound(t: number) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(0.005),
+      this.appliedRandomVariation(0.15),
+      "highpass",
+      this.appliedRandomVariation(2800),
+      this.appliedRandomVariation(0.55),
+    );
+    this.noiseBurst(
+      t + 0.003,
+      this.appliedRandomVariation(0.032),
+      this.appliedRandomVariation(0.085),
+      "bandpass",
+      this.appliedRandomVariation(600),
+      this.appliedRandomVariation(0.65),
+    );
+    this.toneBurst(
+      this.jitterTime(t, 0.001),
+      this.appliedRandomVariation(0.06),
+      this.appliedRandomVariation(0.04),
+      "sine",
+      this.appliedRandomVariation(130),
+      this.appliedRandomVariation(80),
+    );
   }
-  ensureRollingLayer(c);
-  const attackSec = 0.045 + (1 - speed) * 0.07;
-  setRollLevel(c, 1, attackSec, speed, intensity);
 
-  const idleBeforeFadeMs = 220;
-  const scheduleFadeCheck = (delayMs: number) => {
-    rollFadeTimer = setTimeout(
+  private playSnapSound(t: number) {
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(0.004),
+      this.appliedRandomVariation(0.35),
+      "highpass",
+      this.appliedRandomVariation(5000),
+      this.appliedRandomVariation(0.5),
+    );
+    this.noiseBurst(
+      t + 0.001,
+      this.appliedRandomVariation(0.018),
+      this.appliedRandomVariation(0.22),
+      "bandpass",
+      this.appliedRandomVariation(1800),
+      this.appliedRandomVariation(1.1),
+    );
+    this.toneBurst(
+      this.jitterTime(t, 0.0005),
+      this.appliedRandomVariation(0.055),
+      this.appliedRandomVariation(0.11),
+      "triangle",
+      this.appliedRandomVariation(380),
+      this.appliedRandomVariation(160),
+    );
+    this.noiseBurst(
+      t + 0.012,
+      this.appliedRandomVariation(0.022),
+      this.appliedRandomVariation(0.09),
+      "bandpass",
+      this.appliedRandomVariation(1100),
+      this.appliedRandomVariation(0.8),
+    );
+  }
+
+  private playSpinTick(t: number, speed: number) {
+    const fc = 380 + speed * 560 + (Math.random() - 0.5) * 180;
+    const pk = 0.028 + speed * 0.038;
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(0.009),
+      this.appliedRandomVariation(pk),
+      "bandpass",
+      fc,
+      this.appliedRandomVariation(1.4),
+    );
+    if (Math.random() < 0.35) {
+      this.toneBurst(
+        this.jitterTime(t, 0.001),
+        this.appliedRandomVariation(0.012),
+        this.appliedRandomVariation(0.012),
+        "sine",
+        this.appliedRandomVariation(200 + speed * 120),
+      );
+    }
+  }
+
+  private playStopSound(t: number, speed: number) {
+    const dur = 0.08 + speed * 0.18;
+    this.noiseBurst(
+      t,
+      this.appliedRandomVariation(dur * 0.6),
+      this.appliedRandomVariation(0.08 + speed * 0.06),
+      "bandpass",
+      this.appliedRandomVariation(320 + speed * 140),
+      this.appliedRandomVariation(0.7),
+    );
+    this.toneBurst(
+      this.jitterTime(t, 0.002),
+      this.appliedRandomVariation(dur * 0.9),
+      this.appliedRandomVariation(0.055),
+      "sine",
+      this.appliedRandomVariation(95 + speed * 55),
+      this.appliedRandomVariation(35),
+    );
+    this.noiseBurst(
+      t + dur * 0.3,
+      this.appliedRandomVariation(dur * 0.5),
+      this.appliedRandomVariation(0.035),
+      "lowpass",
+      this.appliedRandomVariation(180),
+      this.appliedRandomVariation(0.45),
+    );
+    if (speed > 0.4) {
+      this.noiseBurst(
+        t + dur * 0.55,
+        this.appliedRandomVariation(dur * 0.35),
+        this.appliedRandomVariation(0.02),
+        "bandpass",
+        this.appliedRandomVariation(260),
+        this.appliedRandomVariation(0.6),
+      );
+    }
+  }
+
+  // Rolling Loop Logic
+  private ensureRollingLayer() {
+    if (this.rollSrc || !this.ctx) return;
+
+    this.rollSrc = this.ctx.createBufferSource();
+    this.rollSrc.buffer = this.ensureRollingBuf();
+    this.rollSrc.loop = true;
+    this.rollSrc.playbackRate.value = 1.0;
+
+    this.rollMidFilt = this.ctx.createBiquadFilter();
+    this.rollMidFilt.type = "bandpass";
+    this.rollMidFilt.frequency.value = 620;
+    this.rollMidFilt.Q.value = 0.48;
+
+    this.rollHiFilt = this.ctx.createBiquadFilter();
+    this.rollHiFilt.type = "highshelf";
+    this.rollHiFilt.frequency.value = 1800;
+    this.rollHiFilt.gain.value = -2;
+
+    this.rollShaper = this.ctx.createWaveShaper();
+    this.rollShaper.curve = this.makeShaperCurve(5);
+    this.rollShaper.oversample = "2x";
+
+    this.rollGain = this.ctx.createGain();
+    this.rollGain.gain.value = 0.0001;
+
+    this.rollSrc.connect(this.rollMidFilt);
+    this.rollMidFilt.connect(this.rollHiFilt);
+    this.rollHiFilt.connect(this.rollShaper);
+    this.rollShaper.connect(this.rollGain);
+    this.rollGain.connect(this.out());
+
+    this.rollSrc.start();
+  }
+
+  private setRollLevel(
+    level: number,
+    rampSec: number,
+    speed: number,
+    intensity: number,
+  ) {
+    if (!this.rollGain || !this.rollMidFilt || !this.rollSrc || !this.ctx)
+      return;
+    const t = this.ctx.currentTime;
+    const scaled =
+      this.clamp01(level) * this.clamp01(intensity) * (0.032 + speed * 0.068);
+    const gainTC = Math.max(0.01, rampSec * 0.45);
+    const rateTC = Math.max(0.015, rampSec * 0.38);
+    const freqTC = Math.max(0.012, rampSec * 0.35);
+
+    this.rollGain.gain.cancelScheduledValues(t);
+    this.rollGain.gain.setValueAtTime(
+      Math.max(this.rollGain.gain.value, 0.0001),
+      t,
+    );
+    this.rollGain.gain.setTargetAtTime(Math.max(0.0001, scaled), t, gainTC);
+
+    this.rollSrc.playbackRate.cancelScheduledValues(t);
+    this.rollSrc.playbackRate.setValueAtTime(
+      this.rollSrc.playbackRate.value,
+      t,
+    );
+    this.rollSrc.playbackRate.setTargetAtTime(0.5 + speed * 0.9, t, rateTC);
+
+    this.rollMidFilt.frequency.cancelScheduledValues(t);
+    this.rollMidFilt.frequency.setValueAtTime(
+      this.rollMidFilt.frequency.value,
+      t,
+    );
+    this.rollMidFilt.frequency.setTargetAtTime(360 + speed * 760, t, freqTC);
+  }
+
+  private teardownRollNodes() {
+    try {
+      this.rollSrc?.stop();
+    } catch {}
+    this.rollGain?.disconnect();
+    this.rollSrc = null;
+    this.rollGain = null;
+    this.rollMidFilt = null;
+    this.rollHiFilt = null;
+    this.rollShaper = null;
+  }
+
+  // Public methods
+  public touchRollingSound(speed: number, intensity: number) {
+    this.lastRollTouchAt = performance.now();
+    this.rollIsActive = true;
+    if (this.rollFadeTimer) clearTimeout(this.rollFadeTimer);
+
+    this.ensureRollingLayer();
+    this.setRollLevel(1, 0.045 + (1 - speed) * 0.07, speed, intensity);
+
+    const scheduleFadeCheck = (delayMs: number) => {
+      this.rollFadeTimer = setTimeout(
+        () => {
+          const idleMs = performance.now() - this.lastRollTouchAt;
+          if (this.rollIsActive && idleMs < 220) {
+            scheduleFadeCheck(220 - idleMs + 20);
+            return;
+          }
+          this.rollFadeTimer = null;
+          if (!this.rollIsActive) this.setRollLevel(0, 0.18, speed, intensity);
+        },
+        Math.max(40, delayMs),
+      );
+    };
+    scheduleFadeCheck(220);
+  }
+
+  public stopRollingSound(
+    speed: number,
+    immediate: boolean,
+    intensity: number,
+  ) {
+    this.rollIsActive = false;
+    this.lastRollTouchAt = 0;
+    if (this.rollFadeTimer) {
+      clearTimeout(this.rollFadeTimer);
+      this.rollFadeTimer = null;
+    }
+    if (!this.rollGain) return;
+
+    const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
+    this.setRollLevel(0, fadeOut, speed, intensity);
+
+    setTimeout(
       () => {
-        const idleMs = performance.now() - lastRollTouchAt;
-        if (rollIsActive && idleMs < idleBeforeFadeMs) {
-          scheduleFadeCheck(idleBeforeFadeMs - idleMs + 20);
-          return;
-        }
-        rollFadeTimer = null;
-        if (!rollIsActive) setRollLevel(c, 0, 0.18, speed, intensity);
+        if (!this.rollIsActive) this.teardownRollNodes();
       },
-      Math.max(40, delayMs),
+      (fadeOut + 0.1) * 1000,
     );
-  };
-
-  scheduleFadeCheck(idleBeforeFadeMs);
-}
-
-function stopRollingSound(
-  c: AudioContext,
-  speed: number,
-  immediate: boolean,
-  intensity: number,
-) {
-  rollIsActive = false;
-  lastRollTouchAt = 0;
-  if (rollFadeTimer) {
-    clearTimeout(rollFadeTimer);
-    rollFadeTimer = null;
   }
-  if (!rollGain) return;
 
-  const fadeOut = immediate ? 0.08 : 0.2 + (1 - speed) * 0.2;
-  setRollLevel(c, 0, fadeOut, speed, intensity);
+  public playSound(
+    event: SoundEvent,
+    config?: TamaruConfig,
+    options?: SoundPlaybackOptions,
+  ) {
+    try {
+      const c = this.getContext();
+      if (!c || !this.out()) return;
+      this.tryResume();
 
-  // Tear down the nodes entirely after fade
-  const silenceMs = (fadeOut + 0.1) * 1000;
-  setTimeout(() => {
-    if (!rollIsActive) teardownRollNodes();
-  }, silenceMs);
+      const t = c.currentTime;
+      const rollScale = this.clamp01(config?.rollSoundLevel ?? 1);
+      const speed = this.normSpeed(options?.speed);
+
+      if (event === "spin") {
+        this.touchRollingSound(speed, rollScale);
+        const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
+        if (performance.now() - this.lastSpinAt < minGap) return;
+        this.lastSpinAt = performance.now();
+      }
+
+      switch (event) {
+        case "grab":
+          this.playGrabSound(t);
+          break;
+        case "release":
+          this.playReleaseSound(t);
+          this.stopRollingSound(speed, true, rollScale);
+          break;
+        case "snap":
+          this.playSnapSound(t);
+          break;
+        case "spin":
+          this.playSpinTick(t, speed);
+          break;
+        case "stop":
+          this.playStopSound(t, speed);
+          this.stopRollingSound(speed, false, rollScale);
+          break;
+      }
+    } catch {
+      // Keep UI functional when audio is unsupported or blocked.
+    }
+  }
 }
 
-function teardownRollNodes() {
-  try {
-    rollSrc?.stop();
-  } catch {}
-  rollGain?.disconnect();
-  rollSrc = null;
-  rollGain = null;
-  rollMidFilt = null;
-  rollHiFilt = null;
-  rollShaper = null;
-}
-
-function tryResumeCtx(c: AudioContext) {
-  if (c.state === "suspended") void c.resume().catch(() => {});
-}
+const engine = new AudioEngine();
 
 export function playSound(
   event: SoundEvent,
   config?: TamaruConfig,
   options?: SoundPlaybackOptions,
 ) {
-  try {
-    const c = getAudioContext();
-    if (!c || !out() || !masterGain) return;
-    tryResumeCtx(c);
-    const t = c.currentTime;
-    const rollScale = clamp01(config?.rollSoundLevel ?? 1);
-    const speed = normSpeed(options?.speed);
-
-    if (event === "spin") {
-      touchRollingSound(c, speed, rollScale);
-      const now = performance.now();
-      const minGap = SPIN_MIN_INTERVAL_MS + (1 - speed) * 18;
-      if (now - lastSpinAt < minGap) return;
-      lastSpinAt = now;
-    }
-
-    switch (event) {
-      case "grab":
-        playGrabSound(c, t);
-        break;
-      case "release":
-        playReleaseSound(c, t);
-        stopRollingSound(c, speed, true, rollScale);
-        break;
-      case "snap":
-        playSnapSound(c, t);
-        break;
-      case "spin":
-        playSpinTick(c, t, speed);
-        break;
-      case "stop":
-        playStopSound(c, t, speed);
-        stopRollingSound(c, speed, false, rollScale);
-        break;
-    }
-  } catch {
-    // Keep UI functional when audio is unsupported or blocked.
-  }
+  engine.playSound(event, config, options);
 }
 
 export function feedback(

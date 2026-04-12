@@ -57,7 +57,29 @@ export function isElementScrollable(el: HTMLElement): boolean {
   return false;
 }
 
+let cachedScrollableElements: HTMLElement[] | null = null;
+let domObserver: MutationObserver | null = null;
+
+function clearScrollableCache() {
+  cachedScrollableElements = null;
+}
+
 export function getAllScrollableElements(): HTMLElement[] {
+  if (cachedScrollableElements) {
+    return cachedScrollableElements;
+  }
+
+  // Set up observer on first call to invalidate cache when DOM changes
+  if (!domObserver && typeof window !== "undefined") {
+    domObserver = new MutationObserver(clearScrollableCache);
+    domObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+  }
+
   const elements = document.querySelectorAll("*");
   const scrollableElements: HTMLElement[] = [];
   elements.forEach((el) => {
@@ -65,6 +87,8 @@ export function getAllScrollableElements(): HTMLElement[] {
       scrollableElements.push(el);
     }
   });
+
+  cachedScrollableElements = scrollableElements;
   return scrollableElements;
 }
 

@@ -1,9 +1,7 @@
 # Todo
 
-- [ ] Get the code library ready (aka not bad)
-
 ## Done
-
+- [X] Get the code library ready (aka not bad)
 - [X] Add stick to cursor mode (minimized and not needing to go to the corner and use it to scroll, but only for desktop? or mobile for wherever scrolling... but that's just the normal scrolling) (aka replace cursor with trackball in such a way that it like feels like you're using a trackball)
 - [X] Tweak base config until it's *perfect* (it's pretty good now)
 - [X] Add some logging using Satori
