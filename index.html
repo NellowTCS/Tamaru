@@ -1,95 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Virtual Trackball Demo</title>
+  <title>Tamaru Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
   <style>
+    html,
     body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      /* Disable native scroll */
       background: #18181b;
       color: #fff;
       font-family: system-ui, sans-serif;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      overflow: hidden; /* Disable native page scroll */
     }
+
+    .container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      /* Contains the children bounds */
+      padding: 24px;
+      padding-right: 0px;
+      padding-left: 0px;
+      gap: 24px;
+      box-sizing: border-box;
+    }
+
+    header {
+      padding: 1rem 24px;
+      background: #0f1720;
+      border-bottom: 2px solid #2d3748;
+      border-radius:  0 0 12px 12px;
+    }
+
     h1 {
-      margin-top: 2rem;
-      font-size: 2rem;
+      margin: 0;
+      font-size: 1.5rem;
     }
+
     .desc {
-      margin-bottom: 2rem;
+      margin-top: 0.5rem;
       color: #a3a3a3;
+      font-size: 0.9rem;
+    }
+
+    #config-panel {
+      width: 320px;
+      background: #0f1720;
+      padding: 20px;
+      border-radius: 0 12px 12px 0;
+      border: 1px solid #2d3748;
+      overflow-y: auto;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    #config-panel h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      border-bottom: 1px solid #2d3748;
+      padding-bottom: 8px;
+    }
+
+    .config-table {
+      width: 100%;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+
+    .config-table td:last-child {
+      text-align: right;
+    }
+
+    input[type="range"],
+    select,
+    input[type="number"],
+    input[type="text"] {
+      background: #1e293b;
+      color: white;
+      border: 1px solid #475569;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .action-btns button {
+      flex: 1;
+      padding: 8px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .action-btns button:hover {
+      background: #2563eb;
+    }
+
+    .content-area {
+      flex: 1;
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #2d3748;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #cbd5e1;
     }
   </style>
 </head>
+
 <body>
-  <h1>Tamaru</h1>
-  <div class="desc">Drag the widget, use the trackball, or minimize it. This demo loads the library from <code>dist/main.mjs</code>.</div>
-  <div style="width:100%; max-width:1100px; display:flex; gap:24px; align-items:flex-start;">
-    <aside id="config-panel" style="min-width:280px; background: #0f1720; padding:16px; border-radius:8px;">
-      <h2 style="margin:0 0 8px 0; font-size:1.1rem">Config</h2>
-      <table style="width:100%; color:#e5e7eb; font-size:0.95rem; border-collapse:collapse;">
+  <header>
+    <h1>Tamaru</h1>
+    <div class="desc">Drag the widget or use the trackball. This layout natively prevents scrolling so only the
+      trackball logic can scroll the container.</div>
+  </header>
+
+  <div class="container">
+    <aside id="config-panel">
+      <h2>Configuration</h2>
+      <table class="config-table">
         <tbody>
           <tr>
             <td>sound</td>
-            <td style="text-align:right"><input id="cfg-sound" type="checkbox" /></td>
+            <td><input id="cfg-sound" type="checkbox" /></td>
           </tr>
           <tr>
             <td>haptics</td>
-            <td style="text-align:right"><input id="cfg-haptics" type="checkbox" /></td>
+            <td><input id="cfg-haptics" type="checkbox" /></td>
           </tr>
           <tr>
             <td>rollSoundLevel</td>
-            <td style="text-align:right"><input id="cfg-roll-level" type="range" min="0" max="1" step="0.05" value="0.85" /></td>
+            <td><input id="cfg-roll-level" type="range" min="0" max="1" step="0.05" value="0.85" /></td>
           </tr>
           <tr>
             <td>theme</td>
-            <td style="text-align:right"><select id="cfg-theme"><option>default</option><option>aqua</option><option>red</option><option>glossy</option><option>metal</option><option>neon</option><option>sunset</option></select></td>
+            <td>
+              <select id="cfg-theme">
+                <option>default</option>
+                <option>aqua</option>
+                <option>red</option>
+                <option>glossy</option>
+                <option>metal</option>
+                <option>neon</option>
+                <option>sunset</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top: 12px; border-top: 1px solid #2d3748;">
+              <div style="margin-bottom: 4px;"><small><b>Custom Theme</b></small></div>
+              <label style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;"><input type="checkbox" id="cfg-enable-custom" /> <small>Enable</small></label>
+              <div style="display: grid; grid-template-columns: min-content 1fr min-content 1fr; gap: 6px 12px; align-items: center;">
+                <input type="color" id="cfg-sphereColor" value="#0b3d6e" /> <small>sphere</small>
+                <input type="color" id="cfg-textureColor" value="#1e5ba3" /> <small>texture</small>
+                <input type="color" id="cfg-glow" value="#5cabff" /> <small>glow</small>
+                <input type="color" id="cfg-miniIcon" value="#5cabff" /> <small>icon</small>
+              </div>
+            </td>
           </tr>
           <tr>
             <td>scrollMode</td>
-            <td style="text-align:right"><select id="cfg-scroll"><option>page</option><option>nearest</option><option>horizontal</option><option>momentum</option></select></td>
+            <td>
+              <select id="cfg-scroll">
+                <option>page</option>
+                <option>nearest</option>
+                <option>horizontal</option>
+                <option>momentum</option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>friction</td>
-            <td style="text-align:right"><input id="cfg-friction" type="range" min="0.80" max="0.99" step="0.01" value="0.92" /></td>
+            <td><input id="cfg-friction" type="range" min="0.80" max="0.99" step="0.01" value="0.92" /></td>
           </tr>
           <tr>
             <td>sensitivity</td>
-            <td style="text-align:right"><input id="cfg-sensitivity" type="range" min="0.5" max="3" step="0.1" value="1.8" /></td>
+            <td><input id="cfg-sensitivity" type="range" min="0.5" max="3" step="0.1" value="1.8" /></td>
           </tr>
           <tr>
             <td>snapDistance</td>
-            <td style="text-align:right"><input id="cfg-snap" type="number" min="10" max="300" value="80" style="width:80px;text-align:right" /></td>
+            <td><input id="cfg-snap" type="number" min="10" max="300" value="80" style="width:60px;text-align:right" />
+            </td>
           </tr>
           <tr>
             <td>size</td>
-            <td style="text-align:right"><input id="cfg-size" type="number" min="60" max="300" value="120" style="width:80px;text-align:right" /></td>
+            <td><input id="cfg-size" type="number" min="60" max="300" value="120" style="width:60px;text-align:right" />
+            </td>
           </tr>
           <tr>
             <td>scrollFallback</td>
-            <td style="text-align:right"><select id="cfg-fallback"><option value="document">document</option><option value="none">none</option><option value="container">container</option></select></td>
+            <td>
+              <select id="cfg-fallback">
+                <option value="document">document</option>
+                <option value="none">none</option>
+                <option value="container">container</option>
+              </select>
+            </td>
           </tr>
           <tr>
             <td>fallbackSelector</td>
-            <td style="text-align:right"><input id="cfg-fallback-selector" type="text" placeholder="#my-scroll" style="width:120px;text-align:right" /></td>
+            <td><input id="cfg-fallback-selector" type="text" placeholder="#my-scroll"
+                style="width:100px;text-align:right" value="#scroll-area" /></td>
           </tr>
         </tbody>
       </table>
-      <div style="margin-top:12px; display:flex; gap:8px; justify-content:space-between">
-        <button id="cfg-init" style="flex:1">Init</button>
-        <button id="cfg-destroy" style="flex:1">Destroy</button>
+      <div class="action-btns">
+        <button id="cfg-init">Init</button>
+        <button id="cfg-destroy" style="background:#ef4444;">Destroy</button>
       </div>
     </aside>
-    <main style="flex:1; font-size: 1.1rem; line-height: 1.7; white-space: pre;">
+    <div style="flex: 1; overflow: hidden; display: flex;">
+      <!-- DO NOT FORMAT THIS, it's only long so that the demo works properly -->
+      <main id="scroll-area" class="content-area"
+         style="overflow: hidden; white-space: pre; border-radius: 12px 0 0 12px;">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas eget tortor egestas, mattis metus non, placerat enim. Mauris odio sem, sodales sed nisi ut, tincidunt iaculis enim. Integer vitae purus leo. Vestibulum egestas mauris ut elit luctus, vel pretium sapien rutrum. Proin lobortis in sem sed tincidunt. Morbi varius tincidunt erat, id euismod nisl elementum vel. Nullam dolor purus, lacinia at rhoncus sit amet, luctus vitae magna. Ut sit amet magna eget sapien interdum tristique. Sed pharetra semper lectus non facilisis. Donec pellentesque ex at sodales porta. Duis odio libero, posuere ut rutrum eget, egestas condimentum mauris. Aenean eu enim ullamcorper, dictum arcu non, semper dui. Donec diam felis, tincidunt fringilla pharetra vitae, tristique in urna. Quisque vehicula maximus cursus. Quisque sollicitudin iaculis odio ut pellentesque. Vestibulum elit odio, aliquam at purus non, convallis placerat sem.
 
 Sed vel sapien ligula. Aenean euismod ut tellus et pretium. Aliquam auctor, eros vel semper lobortis, dui metus egestas sapien, tincidunt viverra est nunc quis purus. Ut vulputate massa ac massa faucibus, pretium consectetur dolor venenatis. Vestibulum tincidunt, metus et eleifend mollis, sem nulla placerat mauris, ut interdum odio erat eget mauris. Morbi gravida porttitor felis vel volutpat. Nunc lobortis massa sit amet lacus sodales pellentesque. Suspendisse vitae nibh sed est tempus semper. Donec faucibus, enim faucibus feugiat dignissim, elit turpis tincidunt urna, eget facilisis velit lacus tincidunt diam. Sed porttitor, ante aliquam aliquam dictum, nibh sapien porta elit, a pharetra nibh erat sit amet nibh. Etiam et nunc enim. Cras rhoncus libero vitae convallis feugiat. Morbi aliquam ullamcorper imperdiet. Cras ac turpis non risus sodales vestibulum eget at massa. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
@@ -189,7 +332,8 @@ Curabitur elit ante, vestibulum id nisi ut, tincidunt facilisis nisi. Cras dui q
 Phasellus ac lectus fringilla, aliquam lectus vel, mattis sem. In hac habitasse platea dictumst. Morbi vel ligula vitae lacus vestibulum mollis. Suspendisse potenti. Aliquam elementum erat ex, id porta dui consectetur sed. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In hac habitasse platea dictumst. Nulla sit amet mollis erat. Proin ornare maximus lorem non sollicitudin. Nulla quis est sollicitudin lacus efficitur sagittis faucibus ut tellus. Nam viverra ac nisl quis dictum. Praesent congue malesuada dapibus. Nunc congue, augue id tincidunt vehicula, eros augue pharetra tellus, vitae lobortis dui quam tempor libero.
 
 Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat, neque eu sodales auctor, mauris nunc tristique tortor, sit amet cursus lacus sem ac libero. Quisque quis tincidunt augue. Aliquam posuere quis quam in faucibus. Duis commodo tempor tempor. Praesent pellentesque id magna eget pulvinar. Praesent neque turpis, imperdiet non luctus eget, molestie in tortor.
-  </div>
+      </main>
+</div>
   <script type="module">
     import { initVirtualTrackball, updateVirtualTrackballConfig, destroyVirtualTrackball } from './dist/main.mjs';
 
@@ -199,15 +343,15 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
       haptics: false,
       theme: 'default',
       scrollMode: 'page',
-      scrollFallback: 'document',
-      scrollFallbackContainer: '',
+      scrollFallback: 'container',
+      scrollFallbackContainer: '#scroll-area',
       friction: 0.92,
       sensitivity: 1.8,
       snapDistance: 80,
       size: 120,
     };
 
-    function $(id){ return document.getElementById(id); }
+    function $(id) { return document.getElementById(id); }
 
     function readAndApply() {
       const cfg = {
@@ -215,6 +359,12 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
         rollSoundLevel: parseFloat($('cfg-roll-level').value),
         haptics: $('cfg-haptics').checked,
         theme: $('cfg-theme').value,
+        customTheme: $('cfg-enable-custom').checked ? {
+          sphereColor: $('cfg-sphereColor').value,
+          textureColor: $('cfg-textureColor').value,
+          glow: $('cfg-glow').value,
+          miniIcon: $('cfg-miniIcon').value
+        } : {},
         scrollMode: $('cfg-scroll').value,
         scrollFallback: $('cfg-fallback').value,
         scrollFallbackContainer: $('cfg-fallback-selector').value,
@@ -231,6 +381,11 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-roll-level').value = DEFAULTS.rollSoundLevel;
     $('cfg-haptics').checked = DEFAULTS.haptics;
     $('cfg-theme').value = DEFAULTS.theme;
+    $('cfg-enable-custom').checked = false;
+    $('cfg-sphereColor').value = "#0b3d6e";
+    $('cfg-textureColor').value = "#1e5ba3";
+    $('cfg-glow').value = "#5cabff";
+    $('cfg-miniIcon').value = "#5cabff";
     $('cfg-scroll').value = DEFAULTS.scrollMode;
     $('cfg-friction').value = DEFAULTS.friction;
     $('cfg-sensitivity').value = DEFAULTS.sensitivity;
@@ -240,15 +395,38 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
 
     // attach change listeners
-    ['cfg-sound','cfg-roll-level','cfg-haptics','cfg-theme','cfg-scroll','cfg-friction','cfg-sensitivity','cfg-snap','cfg-size','cfg-fallback','cfg-fallback-selector']
-      .forEach(id => $(id).addEventListener('input', () => readAndApply()));
+    const props = ['cfg-sound', 'cfg-roll-level', 'cfg-haptics', 'cfg-theme', 'cfg-enable-custom', 'cfg-sphereColor', 'cfg-textureColor', 'cfg-glow', 'cfg-miniIcon', 'cfg-scroll', 'cfg-friction', 'cfg-sensitivity', 'cfg-snap', 'cfg-size', 'cfg-fallback', 'cfg-fallback-selector'];
+    props.forEach(id => $(id).addEventListener('input', () => readAndApply()));
+
+    function getInitialConfig() {
+      return {
+        sound: $('cfg-sound').checked,
+        rollSoundLevel: parseFloat($('cfg-roll-level').value),
+        haptics: $('cfg-haptics').checked,
+        theme: $('cfg-theme').value,
+        customTheme: $('cfg-enable-custom').checked ? {
+          sphereColor: $('cfg-sphereColor').value,
+          textureColor: $('cfg-textureColor').value,
+          glow: $('cfg-glow').value,
+          miniIcon: $('cfg-miniIcon').value
+        } : {},
+        scrollMode: $('cfg-scroll').value,
+        scrollFallback: $('cfg-fallback').value,
+        scrollFallbackContainer: $('cfg-fallback-selector').value,
+        friction: parseFloat($('cfg-friction').value),
+        sensitivity: parseFloat($('cfg-sensitivity').value),
+        snapDistance: parseInt($('cfg-snap').value, 10),
+        size: parseInt($('cfg-size').value, 10),
+      };
+    }
 
     // init/destroy buttons
-    $('cfg-init').addEventListener('click', ()=> initVirtualTrackball());
-    $('cfg-destroy').addEventListener('click', ()=> destroyVirtualTrackball());
+    $('cfg-init').addEventListener('click', () => initVirtualTrackball(getInitialConfig()));
+    $('cfg-destroy').addEventListener('click', () => destroyVirtualTrackball());
 
     // auto-init on load
-    initVirtualTrackball();
+    initVirtualTrackball(getInitialConfig());
   </script>
-</body>
-</html>
+  </body>
+  
+  </html>

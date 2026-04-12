@@ -5,6 +5,7 @@ interface TamaruConfig {
     rollSoundLevel?: number;
     haptics?: boolean;
     theme?: TamaruTheme;
+    customTheme?: Record<string, string>;
     scrollMode?: TamaruScrollMode;
     scrollFallback?: "document" | "none" | "container";
     scrollFallbackContainer?: string;
