@@ -1,3 +1,4 @@
+import { mainLogger } from "./logger";
 import styles from "../styles/styles.css";
 import { createWidgetContainer, injectStyleTag } from "./domManager";
 import {
@@ -27,7 +28,7 @@ let tamaruState: TrackballState | null = null;
 let lastPointerSpinFeedbackAt = 0;
 let cleanupVisibilityHandlers: (() => void) | null = null;
 
-function applyThemeVars(vars: ThemeVars) {
+function applyThemeVars(vars: Record<string, string>) {
   const root = document.documentElement;
   Object.entries(vars).forEach(([key, value]) => {
     if (key === "name" || key === "author" || key === "desc") return;
@@ -36,10 +37,18 @@ function applyThemeVars(vars: ThemeVars) {
 }
 
 export function initVirtualTrackball(config?: TamaruConfig): void {
-  if (tamaruContainer) return; // already mounted
+  if (tamaruContainer) {
+    mainLogger.warn("Init called but Tamaru is already mounted. Aborting.");
+    return; // already mounted
+  }
+
+  mainLogger.info("Initializing Tamaru...", { state: { config } });
   tamaruConfig = { ...DEFAULT_CONFIG, ...config };
   // Apply theme
-  const themeVars = themes[tamaruConfig.theme] || themes["default"];
+  const themeVars = {
+    ...(themes[tamaruConfig.theme] || themes["default"]),
+    ...tamaruConfig.customTheme,
+  };
   applyThemeVars(themeVars);
   injectStyleTag(styles as unknown as string);
   const container = createWidgetContainer();
@@ -291,12 +300,19 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
 export function updateVirtualTrackballConfig(
   newConfig: Partial<TamaruConfig>,
 ): void {
-  if (!tamaruContainer || !tamaruConfig) return;
+  if (!tamaruContainer || !tamaruConfig) {
+    mainLogger.warn("Failed to update config: Widget not initialized.");
+    return;
+  }
+  mainLogger.debug("Updating config", { state: { newConfig } });
   Object.assign(tamaruConfig, newConfig);
 
   // Reapply theme if changed
-  if (newConfig.theme) {
-    const themeVars = themes[tamaruConfig.theme] || themes["default"];
+  if (newConfig.theme || newConfig.customTheme) {
+    const themeVars = {
+      ...(themes[tamaruConfig.theme] || themes["default"]),
+      ...tamaruConfig.customTheme,
+    };
     applyThemeVars(themeVars);
   }
 
@@ -341,7 +357,11 @@ export function updateVirtualTrackballConfig(
 
 // destroy
 export function destroyVirtualTrackball(): void {
-  if (!tamaruContainer) return;
+  if (!tamaruContainer) {
+    mainLogger.warn("Destroy called but no widget is active");
+    return;
+  }
+  mainLogger.info("Destroying widget");
   cleanupVisibilityHandlers?.();
   // Stop animation
   if (tamaruAnimationFrame !== null) {

@@ -1,8 +1,16 @@
+import { interactionLogger } from "./logger";
+
 export function setControlsVisible(controls: HTMLElement, visible: boolean) {
   if (visible) {
-    controls.classList.add("vt-controls-visible");
+    if (!controls.classList.contains("vt-controls-visible")) {
+      interactionLogger.debug("Showing controls");
+      controls.classList.add("vt-controls-visible");
+    }
   } else {
-    controls.classList.remove("vt-controls-visible");
+    if (controls.classList.contains("vt-controls-visible")) {
+      interactionLogger.debug("Hiding controls");
+      controls.classList.remove("vt-controls-visible");
+    }
   }
 }
 

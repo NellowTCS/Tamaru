@@ -20,7 +20,7 @@ A modular, self-contained JavaScript/TypeScript widget for adding a draggable, i
 
 ## Installation
 
-Install via npm (library usage):
+Install via npm, pnpm, or yarn (for library usage):
 
 ```bash
 npm install tamaru
@@ -34,7 +34,7 @@ npm install tamaru
 import { initVirtualTrackball, updateVirtualTrackballConfig } from 'tamaru';
 
 initVirtualTrackball({
-  theme: 'glossy',
+  theme: 'neon',
   sound: true,
   rollSoundLevel: 0.85,
   haptics: true,
@@ -58,10 +58,16 @@ updateVirtualTrackballConfig({
 ```html
 <!-- ESM -->
 <script type="module">
-  import { initVirtualTrackball } from 'tamaru';
+  import { initVirtualTrackball } from 'https://cdn.jsdelivr.net/npm/tamaru';
   initVirtualTrackball();
 </script>
 ```
+
+## Docs
+
+Tiny, but comphrehensive docs have been created (using DocMD, [shoutout](https://docmd.io/)) for your perusing pleasure.
+
+Find them at <https://nellowtcs.me/Tamaru/docs>!
 
 ## Demo
 

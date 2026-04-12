@@ -1,5 +1,6 @@
 import { updatePhysics } from "./trackball";
 import { doScroll } from "./scrollEngine";
+import { physicsLogger } from "./logger";
 
 export function createPhysicsLoop(
   state: any,
@@ -45,7 +46,12 @@ export function createPhysicsLoop(
 
       const stopped = state.velX === 0 && state.velY === 0;
       if (stopped && !wasStopped) {
+        physicsLogger.debug("Physics engine stopped spinning");
         feedback("stop");
+      } else if (!stopped && wasStopped) {
+        physicsLogger.debug("Physics engine started spinning", {
+          state: { velX: state.velX, velY: state.velY },
+        });
       }
       wasStopped = stopped;
     }

@@ -1,13 +1,15 @@
 # Todo
 
-- [ ] Create some really basic docs, maybe DocMD if i want to
 - [ ] Get the code library ready (aka not bad)
-- [ ] Add stick to cursor mode (minimized and not needing to go to the corner and use it to scroll, but only for desktop? or mobile for wherever scrolling... but that's just the normal scrolling)
-- [ ] Better demo
+- [ ] Add stick to cursor mode (minimized and not needing to go to the corner and use it to scroll, but only for desktop? or mobile for wherever scrolling... but that's just the normal scrolling) (aka replace cursor with trackball in such a way that it like feels like you're using a trackball)
 - [ ] Tweak base config until it's *perfect*
 
 ## Done
 
+- [X] Add some logging using Satori
+- [X] Better demo (with curvomorphism, sorry i couldn't help myself)
+- [X] Custom themes (why didn't I add this before, it was so easy)
+- [X] Create some really basic docs, maybe DocMD if i want to
 - [X] Make the fade in/out for rolling much more realistic
 - [X] Fix WebKit (yes you iOS) not listening to my "Don't add scrollbars"
 - [X] Make rolling less grate-y more roll-y

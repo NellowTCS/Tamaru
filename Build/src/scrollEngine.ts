@@ -1,5 +1,6 @@
 import { TamaruScrollMode } from "./types";
 import { snapToEdge } from "./trackball";
+import { scrollLogger } from "./logger";
 
 function markScrollbarHidden(el: HTMLElement | null) {
   if (!el) return;
@@ -81,16 +82,22 @@ export function doScroll(
     }
   }
 
-  if (!scrollable) return; // nothing to scroll per policy
+  if (!scrollable) {
+    scrollLogger.warn("No scrollable target resolved. Aborting scroll.", {
+      state: { dx, dy, mode, scrollFallback },
+    });
+    return; // nothing to scroll per policy
+  }
 
   markScrollbarHidden(scrollable);
-  if (
-    scrollable === document.documentElement ||
-    scrollable === document.body
-  ) {
+  if (scrollable === document.documentElement || scrollable === document.body) {
     markScrollbarHidden(document.documentElement as HTMLElement);
     markScrollbarHidden(document.body as HTMLElement);
   }
+
+  scrollLogger.debug("Executing scroll", {
+    state: { dx, dy, mode, target: scrollable.tagName },
+  });
 
   switch (mode) {
     case "page":

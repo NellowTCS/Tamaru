@@ -16,6 +16,7 @@ export interface TamaruConfig {
   rollSoundLevel?: number;
   haptics?: boolean;
   theme?: TamaruTheme;
+  customTheme?: Record<string, string>;
   scrollMode?: TamaruScrollMode;
   // How to behave when no nearest scrollable ancestor is found
   // 'document' -> fall back to document scrolling (default)
@@ -35,6 +36,7 @@ export const DEFAULT_CONFIG: Required<TamaruConfig> = {
   rollSoundLevel: 0.45,
   haptics: false,
   theme: "default",
+  customTheme: {},
   scrollMode: "page",
   scrollFallback: "document",
   scrollFallbackContainer: "",
