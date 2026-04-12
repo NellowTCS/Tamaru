@@ -36,6 +36,23 @@ Type: `number`
 Default: `120`  
 Fixed square dimensions of the injected container in pixels.
 
+### Stick Mode
+
+`stickMode`  
+Type: `boolean`  
+Default: `true`  
+Enables "Stick Mode" (Pointer Lock) via the crosshair button. When active, mouse movement directly scrolls the active target.
+
+`stickModeTargetCycleKey`  
+Type: `"Shift" | "Alt" | "Control" | "Meta" | "None"`  
+Default: `"Shift"`  
+The modifier key that, when held in Stick Mode, allows the scroll wheel to cycle through scrollable elements on the page instead of scrolling them.
+
+`stickModeCycleSnap`  
+Type: `boolean`  
+Default: `true`  
+Whether the window should automatically perform a smooth scroll into targeting view (`scrollIntoView`) on the newly selected container when cycling targets.
+
 ### Physics and Interaction
 
 `scrollMode`  

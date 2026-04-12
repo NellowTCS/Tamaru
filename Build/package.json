@@ -1,6 +1,6 @@
 {
   "name": "tamaru",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "Skeuomorphic, momentum-based virtual trackball widget for the web.",
   "license": "Apache-2.0",
   "main": "dist/index.js",

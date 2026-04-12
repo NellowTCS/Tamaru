@@ -42,6 +42,18 @@
     pointer-events: auto;
 }
 
+#vt-widget-container.vt-stick-mode {
+    left: 50vw !important;
+    top: 50vh !important;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 99999999;
+}
+
+#vt-widget-container.vt-stick-mode #vt-controls {
+    display: none !important;
+}
+
 .vt-btn {
     width: 30px;
     height: 30px;

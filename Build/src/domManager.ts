@@ -3,6 +3,7 @@ export function createWidgetContainer(): HTMLDivElement {
   container.id = "vt-widget-container";
   container.innerHTML = `
     <div id="vt-controls">
+      <div id="vt-stick-btn" class="vt-btn" title="Stick to Cursor">⌖</div>
       <div id="vt-drag-handle" class="vt-btn" title="Drag to move">✥</div>
       <div id="vt-toggle-btn" class="vt-btn" title="Toggle Size">-</div>
     </div>

@@ -9,7 +9,13 @@ import {
 } from "./trackball";
 import { TamaruConfig, DEFAULT_CONFIG } from "./types";
 import { themes, updateTexture } from "./themeLoader";
-import { findNearestScrollable, doSnapToEdge, doScroll } from "./scrollEngine";
+import {
+  findNearestScrollable,
+  doSnapToEdge,
+  doScroll,
+  cycleScrollableTarget,
+  setStickScrollTarget,
+} from "./scrollEngine";
 import {
   setControlsVisible,
   showControls,
@@ -17,6 +23,7 @@ import {
 } from "./controlsManager";
 import { feedback } from "./sound";
 import { createPhysicsLoop } from "./physicsEngine";
+import { setupStickMode } from "./stickMode";
 
 type ThemeVars = (typeof themes)["default"];
 
@@ -121,13 +128,13 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
     trackballArea.style.height = sizePx + "px";
   };
 
-  const applyMiniState = (mini: boolean) => {
+  const applyMiniState = (mini: boolean, skipSnap = false) => {
     const size = tamaruConfig ? tamaruConfig.size : 120;
     const targetSize = mini ? Math.max(40, Math.round(size * 0.4)) : size;
     container.classList.toggle("vt-mini", mini);
     toggleBtn.textContent = mini ? "+" : "-";
     setWidgetSize(targetSize);
-    snapToEdgeHandler();
+    if (!skipSnap) snapToEdgeHandler();
   };
 
   toggleBtn.addEventListener("click", () => {
@@ -136,7 +143,10 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   });
 
   trackballArea.addEventListener("click", () => {
-    if (container.classList.contains("vt-mini")) {
+    if (
+      container.classList.contains("vt-mini") &&
+      !container.classList.contains("vt-stick-mode")
+    ) {
       applyMiniState(false);
     }
   });
@@ -231,6 +241,113 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   );
   tamaruAnimationFrame = requestAnimationFrame(physicsLoop);
 
+  let preStickLeft = 0;
+  let preStickTop = 0;
+
+  const stickBtn = container.querySelector("#vt-stick-btn") as HTMLElement;
+  const isMobileOrCoarse = window.matchMedia("(pointer: coarse)").matches;
+  if (!tamaruConfig!.stickMode || isMobileOrCoarse) {
+    stickBtn.style.display = "none";
+  }
+
+  const cleanupStickMode = setupStickMode(
+    stickBtn,
+    container,
+    (() => {
+      let currentStickTarget: HTMLElement | null = null;
+      let lastCycleTime = 0;
+      let wheelAccX = 0;
+      let wheelAccY = 0;
+      const CYCLE_THRESHOLD = 50;
+
+      return {
+        onEnter: () => {
+          preStickLeft = currentLeft;
+          preStickTop = currentTop;
+          const size = tamaruConfig ? tamaruConfig.size : 120;
+          const miniSize = Math.max(40, Math.round(size * 0.4));
+
+          currentLeft = (window.innerWidth - miniSize) / 2;
+          currentTop = (window.innerHeight - miniSize) / 2;
+          container.style.left = currentLeft + "px";
+          container.style.top = currentTop + "px";
+
+          applyMiniState(true, true);
+          container.classList.add("vt-stick-mode");
+        },
+        onExit: () => {
+          currentLeft = preStickLeft;
+          currentTop = preStickTop;
+          container.style.left = currentLeft + "px";
+          container.style.top = currentTop + "px";
+
+          container.classList.remove("vt-stick-mode");
+          applyMiniState(false, false);
+          setStickScrollTarget(null); // Clear active target on exit
+          currentStickTarget = null;
+        },
+        onMove: (e: MouseEvent) => {
+          if (!tamaruConfig?.stickMode) return;
+          const dx = e.movementX;
+          const dy = e.movementY;
+
+          state.velX += dx * 0.5;
+          state.velY += dy * 0.5;
+        },
+        onWheel: (e: WheelEvent) => {
+          if (!tamaruConfig?.stickMode) return;
+
+          const cycleKey = tamaruConfig.stickModeTargetCycleKey || "Shift";
+          const isModifierPressed =
+            (cycleKey === "Shift" && e.shiftKey) ||
+            (cycleKey === "Alt" && e.altKey) ||
+            (cycleKey === "Control" && e.ctrlKey) ||
+            (cycleKey === "Meta" && e.metaKey) ||
+            (cycleKey === "None" &&
+              !e.shiftKey &&
+              !e.altKey &&
+              !e.ctrlKey &&
+              !e.metaKey);
+
+          if (isModifierPressed) {
+            e.preventDefault();
+            wheelAccX += e.deltaX;
+            wheelAccY += e.deltaY;
+            const now = Date.now();
+            if (
+              now - lastCycleTime > 300 &&
+              (Math.abs(wheelAccX) > CYCLE_THRESHOLD ||
+                Math.abs(wheelAccY) > CYCLE_THRESHOLD)
+            ) {
+              currentStickTarget = cycleScrollableTarget(
+                wheelAccX,
+                wheelAccY,
+                currentStickTarget,
+              );
+              setStickScrollTarget(currentStickTarget);
+              if (
+                currentStickTarget &&
+                tamaruConfig.stickModeCycleSnap !== false
+              ) {
+                currentStickTarget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                  inline: "center",
+                });
+              }
+              lastCycleTime = now;
+              wheelAccX = 0;
+              wheelAccY = 0;
+            }
+          } else {
+            wheelAccX = 0;
+            wheelAccY = 0;
+          }
+        },
+      };
+    })(),
+  );
+
   const stopInertiaAndRolling = () => {
     if (!tamaruState || !tamaruConfig) return;
     const speed = Math.hypot(tamaruState.velX || 0, tamaruState.velY || 0);
@@ -254,6 +371,7 @@ export function initVirtualTrackball(config?: TamaruConfig): void {
   cleanupVisibilityHandlers = () => {
     document.removeEventListener("visibilitychange", onVisibilityChange);
     window.removeEventListener("blur", onWindowBlur);
+    cleanupStickMode();
     cleanupVisibilityHandlers = null;
   };
 

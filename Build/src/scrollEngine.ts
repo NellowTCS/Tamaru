@@ -30,22 +30,91 @@ export function doSnapToEdge(
   return pos;
 }
 
+export function isElementScrollable(el: HTMLElement): boolean {
+  if (el === document.body || el === document.documentElement) {
+    return (
+      document.body.scrollHeight > window.innerHeight ||
+      document.documentElement.scrollHeight > window.innerHeight ||
+      document.body.scrollWidth > window.innerWidth ||
+      document.documentElement.scrollWidth > window.innerWidth
+    );
+  }
+  const style = window.getComputedStyle(el);
+  const overflowY = style.overflowY;
+  const overflowX = style.overflowX;
+  if (
+    (overflowY === "auto" || overflowY === "scroll") &&
+    el.scrollHeight - el.clientHeight > 1
+  ) {
+    return true;
+  }
+  if (
+    (overflowX === "auto" || overflowX === "scroll") &&
+    el.scrollWidth - el.clientWidth > 1
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function getAllScrollableElements(): HTMLElement[] {
+  const elements = document.querySelectorAll("*");
+  const scrollableElements: HTMLElement[] = [];
+  elements.forEach((el) => {
+    if (el instanceof HTMLElement && isElementScrollable(el)) {
+      scrollableElements.push(el);
+    }
+  });
+  return scrollableElements;
+}
+
+export function cycleScrollableTarget(
+  dx: number,
+  dy: number,
+  currentTarget: HTMLElement | null,
+): HTMLElement | null {
+  const scrollableElements = getAllScrollableElements();
+  if (scrollableElements.length === 0) return null;
+
+  let currentIndex = scrollableElements.findIndex((el) => el === currentTarget);
+  if (currentIndex === -1) {
+    currentIndex = -1; // We start at -1 so the first dx/dy push lands exactly on element 0.
+  }
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 0) {
+      currentIndex = (currentIndex + 1) % scrollableElements.length;
+    } else {
+      currentIndex =
+        currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
+    }
+  } else {
+    if (dy > 0) {
+      currentIndex = (currentIndex + 1) % scrollableElements.length;
+    } else {
+      currentIndex =
+        currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
+    }
+  }
+
+  const target = scrollableElements[currentIndex];
+  scrollableElements.forEach((el) => {
+    if (el.style) el.style.boxShadow = "";
+  });
+  if (target && target.style)
+    target.style.boxShadow = "inset 0 0 0 2px rgba(0, 150, 255, 0.7)";
+
+  setTimeout(() => {
+    if (target && target.style) target.style.boxShadow = "";
+  }, 1000);
+
+  return target;
+}
+
 export function findNearestScrollable(el: HTMLElement): HTMLElement | null {
   let node: HTMLElement | null = el;
   while (node && node !== document.body) {
-    const style = window.getComputedStyle(node);
-    const overflowY = style.overflowY;
-    const overflowX = style.overflowX;
-    if (
-      (overflowY === "auto" || overflowY === "scroll") &&
-      node.scrollHeight > node.clientHeight
-    ) {
-      return node;
-    }
-    if (
-      (overflowX === "auto" || overflowX === "scroll") &&
-      node.scrollWidth > node.clientWidth
-    ) {
+    if (isElementScrollable(node)) {
       return node;
     }
     node = node.parentElement;
@@ -53,18 +122,21 @@ export function findNearestScrollable(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
-export function doScroll(
-  dx: number,
-  dy: number,
-  mode: TamaruScrollMode,
-  target: HTMLElement,
-  scrollFallback: "document" | "none" | "container" = "document",
-  scrollFallbackContainer?: string,
-): void {
-  // Find nearest scrollable ancestor
-  const nearest = findNearestScrollable(target);
+let stickScrollTarget: HTMLElement | null = null;
 
-  // Resolve effective element to scroll based on fallback policy
+export function setStickScrollTarget(target: HTMLElement | null) {
+  stickScrollTarget = target;
+}
+
+export function resolveEffectiveScrollable(
+  target: HTMLElement,
+  scrollFallback: "document" | "none" | "container",
+  scrollFallbackContainer?: string,
+): HTMLElement | null {
+  if (stickScrollTarget) {
+    return stickScrollTarget;
+  }
+  const nearest = findNearestScrollable(target);
   let scrollable: HTMLElement | null = nearest;
 
   if (!scrollable) {
@@ -78,9 +150,26 @@ export function doScroll(
         (document.scrollingElement as HTMLElement) ||
         (document.documentElement as HTMLElement);
     } else {
-      scrollable = null; // 'none' -> do nothing
+      scrollable = null;
     }
   }
+  return scrollable;
+}
+
+export function doScroll(
+  dx: number,
+  dy: number,
+  mode: TamaruScrollMode,
+  target: HTMLElement,
+  scrollFallback: "document" | "none" | "container" = "document",
+  scrollFallbackContainer?: string,
+): void {
+  // Resolve effective element to scroll based on fallback policy
+  const scrollable = resolveEffectiveScrollable(
+    target,
+    scrollFallback,
+    scrollFallbackContainer,
+  );
 
   if (!scrollable) {
     scrollLogger.warn("No scrollable target resolved. Aborting scroll.", {

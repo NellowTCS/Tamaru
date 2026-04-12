@@ -25,6 +25,10 @@ Built-in kinetic scrolling. Flicking the trackball calculates realistic drag and
 Automatically route scroll events to the nearest scrollable container, fallback to the main document, or explicitly target a DOM element.
 :::
 
+::: card Stick Mode (Pointer Lock)
+Enter "Stick Mode" to capture the mouse and use physical mouse movement to scroll directly. Hold `Shift` while locked to visually cycle through and target different scrollable elements on the page.
+:::
+
 ::: card Skinnable Themes
 Swap out visual variables and base textures at runtime. It ships with built-in gradients ranging from glossy metal to flat matte.
 :::
