@@ -1,0 +1,19 @@
+{
+  "name": "tamaru-extension",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "tamaru": "0.1.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.4.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
+  }
+}
