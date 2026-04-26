@@ -1,8 +1,179 @@
 <!DOCTYPE html>
-<html>
-<link rel="stylesheet" href="styles.css" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamaru</title>
+  <link rel="stylesheet" href="./src/styles/styles.css">
+</head>
 <body>
-    <script type="module" src="popup.ts"></script>
-</body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="orb"></div>
+        <div>
+          <h1>Tamaru</h1>
+          <p class="tagline">Virtual Trackball</p>
+        </div>
+      </div>
+    </header>
 
+    <div class="scroll-container">
+      <form id="configForm">
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon appearance">Aa</div>
+            <h2>Appearance</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="size">Size</label>
+              <div class="field-right">
+                <input type="range" id="size" min="40" max="300" value="120">
+                <span class="value-display" data-for="size">120</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="theme">Theme</label>
+              <select id="theme">
+                <option value="default">Default</option>
+                <option value="aqua">Aqua</option>
+                <option value="red">Red</option>
+                <option value="glossy">Glossy</option>
+                <option value="metal">Metal</option>
+                <option value="neon">Neon</option>
+                <option value="sunset">Sunset</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon sound">♪</div>
+            <h2>Sound</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="sound">Enable Sound</label>
+              <input type="checkbox" id="sound">
+            </div>
+            <div class="field">
+              <label for="rollSoundLevel">Volume</label>
+              <div class="field-right">
+                <input type="range" id="rollSoundLevel" min="0" max="1" step="0.01" value="0.45">
+                <span class="value-display" data-for="rollSoundLevel">0.45</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon haptics">⚡</div>
+            <h2>Haptics</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="haptics">Enable Haptics</label>
+              <input type="checkbox" id="haptics">
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon scrolling">↕</div>
+            <h2>Scrolling</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="scrollMode">Scroll Mode</label>
+              <select id="scrollMode">
+                <option value="page">Page</option>
+                <option value="nearest">Nearest</option>
+                <option value="horizontal">Horizontal</option>
+                <option value="momentum">Momentum</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="scrollFallback">Fallback</label>
+              <select id="scrollFallback">
+                <option value="document">Document</option>
+                <option value="none">None</option>
+                <option value="container">Container</option>
+              </select>
+            </div>
+            <div class="field" id="containerField">
+              <label for="scrollFallbackContainer">Selector</label>
+              <input type="text" id="scrollFallbackContainer" placeholder=".my-container">
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon physics">◎</div>
+            <h2>Physics</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="friction">Friction</label>
+              <div class="field-right">
+                <input type="range" id="friction" min="0.5" max="1" step="0.01" value="0.92">
+                <span class="value-display" data-for="friction">0.92</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="sensitivity">Sensitivity</label>
+              <div class="field-right">
+                <input type="range" id="sensitivity" min="0.1" max="5" step="0.01" value="1.8">
+                <span class="value-display" data-for="sensitivity">1.8</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="snapDistance">Snap Distance</label>
+              <div class="field-right">
+                <input type="range" id="snapDistance" min="10" max="300" value="80">
+                <span class="value-display" data-for="snapDistance">80</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div class="section-icon stick">⌁</div>
+            <h2>Stick Mode</h2>
+          </div>
+          <div class="card">
+            <div class="field">
+              <label for="stickMode">Enable</label>
+              <input type="checkbox" id="stickMode" checked>
+            </div>
+            <div class="field">
+              <label for="stickModeTargetCycleKey">Cycle Key</label>
+              <select id="stickModeTargetCycleKey">
+                <option value="Shift">Shift</option>
+                <option value="Alt">Alt</option>
+                <option value="Control">Control</option>
+                <option value="Meta">Meta</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="stickModeCycleSnap">Cycle Snap</label>
+              <input type="checkbox" id="stickModeCycleSnap" checked>
+            </div>
+          </div>
+        </section>
+      </form>
+    </div>
+
+    <footer>
+      <button type="submit" form="configForm">Save Settings</button>
+    </footer>
+  </div>
+  <script type="module" src="./src/popup.ts"></script>
+</body>
 </html>
