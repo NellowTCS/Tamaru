@@ -2134,6 +2134,9 @@ ${e.errors.join(`
         });
       }
     }
+    resumeIfNeeded() {
+      this.tryResume();
+    }
     out() {
       return this.compressor;
     }
@@ -2529,6 +2532,7 @@ ${e.errors.join(`
     }
   };
   var engine = new AudioEngine();
+  var resumeIfNeeded = () => engine.resumeIfNeeded();
   function playSound(event, config, options) {
     engine.playSound(event, config, options);
   }
@@ -2613,6 +2617,7 @@ ${e.errors.join(`
     };
     document.addEventListener("pointerlockchange", onPointerLockChange, false);
     stickBtn.addEventListener("click", () => {
+      resumeIfNeeded();
       if (document.pointerLockElement !== container) {
         if (typeof container.requestPointerLock !== "function") {
           stickLogger.warn("Pointer lock not supported on this device/browser.");
@@ -2731,6 +2736,7 @@ ${e.errors.join(`
       );
       handle.addEventListener("pointerdown", (e) => {
         this.isWidgetDragging = true;
+        resumeIfNeeded();
         this.container.classList.add("is-dragging");
         this.startMouseX = e.clientX;
         this.startMouseY = e.clientY;
@@ -2834,6 +2840,7 @@ ${e.errors.join(`
       );
       viewport.addEventListener("pointerdown", (e) => {
         this.isTrackballDragging = true;
+        resumeIfNeeded();
         this.tbPrevMouseX = e.clientX;
         this.tbPrevMouseY = e.clientY;
         this.state.velX = 0;

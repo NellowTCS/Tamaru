@@ -2105,6 +2105,9 @@ var AudioEngine = class {
       });
     }
   }
+  resumeIfNeeded() {
+    this.tryResume();
+  }
   out() {
     return this.compressor;
   }
@@ -2500,6 +2503,7 @@ var AudioEngine = class {
   }
 };
 var engine = new AudioEngine();
+var resumeIfNeeded = () => engine.resumeIfNeeded();
 function playSound(event, config, options) {
   engine.playSound(event, config, options);
 }
@@ -2584,6 +2588,7 @@ function setupStickMode(stickBtn, container, options) {
   };
   document.addEventListener("pointerlockchange", onPointerLockChange, false);
   stickBtn.addEventListener("click", () => {
+    resumeIfNeeded();
     if (document.pointerLockElement !== container) {
       if (typeof container.requestPointerLock !== "function") {
         stickLogger.warn("Pointer lock not supported on this device/browser.");
@@ -2702,6 +2707,7 @@ var TamaruApp = class {
     );
     handle.addEventListener("pointerdown", (e) => {
       this.isWidgetDragging = true;
+      resumeIfNeeded();
       this.container.classList.add("is-dragging");
       this.startMouseX = e.clientX;
       this.startMouseY = e.clientY;
@@ -2805,6 +2811,7 @@ var TamaruApp = class {
     );
     viewport.addEventListener("pointerdown", (e) => {
       this.isTrackballDragging = true;
+      resumeIfNeeded();
       this.tbPrevMouseX = e.clientX;
       this.tbPrevMouseY = e.clientY;
       this.state.velX = 0;
