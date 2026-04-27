@@ -12,11 +12,6 @@ const getConfig = async (): Promise<TamaruConfig | undefined> => {
 const setConfig = (config: TamaruConfig) =>
   chrome.storage.sync.set({ [STORAGE_KEY]: config });
 
-const getValue = (el: HTMLInputElement | HTMLSelectElement) =>
-  el instanceof HTMLInputElement && el.type === "checkbox"
-    ? el.checked
-    : el.value;
-
 const setValue = (
   el: HTMLInputElement | HTMLSelectElement,
   value: string | number | boolean,
@@ -25,6 +20,19 @@ const setValue = (
     el.checked = Boolean(value);
   } else {
     el.value = String(value);
+  }
+};
+
+const THEME_CLASS_PREFIX = "theme-";
+const THEMES = ["aqua", "red", "glossy", "metal", "neon", "sunset"];
+
+const applyThemeClass = (theme: string) => {
+  const body = document.body;
+  // Remove all existing theme classes
+  THEMES.forEach((t) => body.classList.remove(`${THEME_CLASS_PREFIX}${t}`));
+  // Add new theme class if not default
+  if (theme && theme !== "default") {
+    body.classList.add(`${THEME_CLASS_PREFIX}${theme}`);
   }
 };
 
@@ -52,6 +60,7 @@ const applyConfig = (config: TamaruConfig) => {
     setValue(el, cfg[id]);
   }
 
+  applyThemeClass(cfg.theme);
   updateValueDisplays();
   updateContainerFieldVisibility();
 };
@@ -95,16 +104,37 @@ const setupEventListeners = () => {
     input.addEventListener("input", () => {
       const display = document.querySelector(`.value-display[data-for="${input.id}"]`);
       if (display) display.textContent = input.value;
+      autoSave();
     });
   });
 
-  getElement<HTMLSelectElement>("scrollFallback").addEventListener("change", updateContainerFieldVisibility);
-
-  getElement<HTMLFormElement>("configForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    setConfig(collectConfig());
-    alert("Settings saved!");
+  const selects = document.querySelectorAll<HTMLSelectElement>("select");
+  selects.forEach((sel) => {
+    sel.addEventListener("change", () => {
+      if (sel.id === "theme") applyThemeClass(sel.value);
+      autoSave();
+    });
   });
+
+  const checkboxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("change", autoSave);
+  });
+
+  const textInputs = document.querySelectorAll<HTMLInputElement>('input[type="text"]');
+  textInputs.forEach((txt) => {
+    txt.addEventListener("input", autoSave);
+  });
+
+  getElement<HTMLSelectElement>("scrollFallback").addEventListener("change", updateContainerFieldVisibility);
+};
+
+let saveTimeout: number | undefined;
+const autoSave = () => {
+  clearTimeout(saveTimeout);
+  saveTimeout = window.setTimeout(() => {
+    setConfig(collectConfig());
+  }, 300);
 };
 
 const init = async () => {

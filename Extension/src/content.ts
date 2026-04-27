@@ -15,6 +15,10 @@ const init = async () => {
   initVirtualTrackball(config as Parameters<typeof initVirtualTrackball>[0]);
 };
 
+export function onExecute() {
+  init();
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes[STORAGE_KEY]) {
     updateVirtualTrackballConfig(
@@ -24,5 +28,3 @@ chrome.storage.onChanged.addListener((changes, area) => {
     );
   }
 });
-
-init();

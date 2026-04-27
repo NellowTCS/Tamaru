@@ -1,179 +1,646 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tamaru</title>
-  <link rel="stylesheet" href="./src/styles/styles.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="logo">
-        <div class="orb"></div>
-        <div>
-          <h1>Tamaru</h1>
-          <p class="tagline">Virtual Trackball</p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tamaru</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        /* Matches Tamaru Demo exactly */
+        --bg: #18181b;
+        --surface: #0f1720;
+        --elevated: #1e293b;
+        --hover: #243447;
+        --text: #e2e8f0;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --accent: #3b82f6;
+        --accent-glow: rgba(59, 130, 246, 0.25);
+        --border: #2d3748;
+        --border-subtle: #1e293b;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+      }
+
+      /* Theme: Aqua */
+      .theme-aqua {
+        --accent: #1ca9e6;
+        --accent-glow: rgba(28, 169, 230, 0.25);
+        --surface: #0f1720;
+        --elevated: #1e293b;
+        --bg: #18181b;
+      }
+
+      /* Theme: Red */
+      .theme-red {
+        --accent: #b91c1c;
+        --accent-glow: rgba(185, 28, 28, 0.25);
+      }
+
+      /* Theme: Glossy */
+      .theme-glossy {
+        --bg: #f5f7fa;
+        --surface: #ffffff;
+        --elevated: #f0f4f8;
+        --hover: #e8edf5;
+        --text: #1e293b;
+        --text-secondary: #64748b;
+        --text-muted: #94a3b8;
+        --accent: #f8fbff;
+        --accent-glow: rgba(248, 251, 255, 0.5);
+        --border: #d2d8e0;
+        --border-subtle: #e5eaf0;
+      }
+
+      /* Theme: Metal */
+      .theme-metal {
+        --bg: #1a1a1a;
+        --surface: #252525;
+        --elevated: #2f2f2f;
+        --hover: #3a3a3a;
+        --text: #e0e0e0;
+        --text-secondary: #8a8a8a;
+        --text-muted: #5a5a5a;
+        --accent: #e0e0e0;
+        --accent-glow: rgba(224, 224, 224, 0.25);
+        --border: #3a3a3a;
+        --border-subtle: #2f2f2f;
+      }
+
+      /* Theme: Neon */
+      .theme-neon {
+        --bg: #0a0a1a;
+        --surface: #0f0f25;
+        --elevated: #141430;
+        --hover: #1a1a40;
+        --text: #e8ffe8;
+        --text-secondary: #7aff7a;
+        --text-muted: #4a7a4a;
+        --accent: #2ffcff;
+        --accent-glow: rgba(47, 252, 255, 0.3);
+        --border: #1e1e4a;
+        --border-subtle: #151528;
+      }
+
+      /* Theme: Sunset */
+      .theme-sunset {
+        --bg: #1a0e0a;
+        --surface: #25150f;
+        --elevated: #301c14;
+        --hover: #402a1a;
+        --text: #ffe8d0;
+        --text-secondary: #b87a4a;
+        --text-muted: #7a5a3a;
+        --accent: #ffb46a;
+        --accent-glow: rgba(255, 180, 106, 0.25);
+        --border: #4a2d1e;
+        --border-subtle: #381815;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Outfit", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        width: 320px;
+        height: 520px;
+        overflow: hidden;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      header {
+        background: var(--surface);
+        padding: 16px 20px;
+        border-bottom: 2px solid var(--border);
+        border-radius: 0 0 12px 12px;
+        position: relative;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .orb {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 35% 35%,
+          var(--accent),
+          var(--bg)
+        );
+        box-shadow:
+          0 4px 20px var(--accent-glow),
+          inset 0 -4px 10px rgba(0, 0, 0, 0.4),
+          inset 0 4px 10px rgba(255, 255, 255, 0.15);
+        position: relative;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      .orb::after {
+        content: "";
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 12px;
+        height: 7px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        filter: blur(2px);
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+
+      header h1 {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      .tagline {
+        color: var(--text-muted);
+        margin-top: 2px;
+        font-size: 11px;
+        font-weight: 300;
+      }
+
+      .scroll-container {
+        flex: 1;
+        padding: 12px 16px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .scroll-container::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .scroll-container::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .scroll-container::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .scroll-container::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+
+      section {
+        margin-bottom: 12px;
+      }
+
+      section:last-of-type {
+        margin-bottom: 0;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+      }
+
+      .section-header h2 {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .card + .card {
+        margin-top: 8px;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        transition: background 0.15s;
+      }
+
+      .field:hover {
+        background: var(--hover);
+      }
+
+      .field:not(:last-child) {
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .field label {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--text-secondary);
+      }
+
+      .field-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      input[type="range"] {
+        width: 90px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border);
+        appearance: none;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        box-shadow: 0 2px 6px var(--accent-glow);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+        box-shadow: 0 2px 10px var(--accent-glow);
+      }
+
+      .value-display {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        min-width: 36px;
+        text-align: right;
+      }
+
+      select {
+        background: var(--elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font-size: 12px;
+        font-family: "Outfit", sans-serif;
+        padding: 6px 24px 6px 10px;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      select:hover {
+        border-color: var(--text-muted);
+      }
+
+      select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-glow);
+      }
+
+      input[type="checkbox"] {
+        appearance: none;
+        width: 36px;
+        height: 20px;
+        background: var(--border);
+        border-radius: 10px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      input[type="checkbox"]::before {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: var(--text-secondary);
+        border-radius: 50%;
+        transition:
+          transform 0.2s,
+          background 0.2s;
+      }
+
+      input[type="checkbox"]:checked {
+        background: var(--accent);
+      }
+
+      input[type="checkbox"]:checked::before {
+        transform: translateX(16px);
+        background: white;
+      }
+
+      input[type="text"] {
+        background: var(--elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        color: var(--text);
+        font-size: 12px;
+        font-family: "JetBrains Mono", monospace;
+        padding: 8px 10px;
+        width: 140px;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-glow);
+      }
+
+      input[type="text"]::placeholder {
+        color: var(--text-muted);
+      }
+
+      #containerField {
+        display: none;
+      }
+
+      #containerField.visible {
+        display: flex;
+      }
+
+      footer {
+        background: var(--surface);
+        border-top: 2px solid var(--border);
+        padding: 12px 16px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: "Outfit", sans-serif;
+        color: #ffffff;
+        background: var(--accent);
+        border: none;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.2s;
+        box-shadow: 0 4px 15px var(--accent-glow);
+      }
+
+      button[type="submit"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px var(--accent-glow);
+      }
+
+      button[type="submit"]:active {
+        transform: translateY(0);
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">
+          <div class="orb"></div>
+          <div>
+            <h1>Tamaru</h1>
+            <p class="tagline">Virtual Trackball</p>
+          </div>
         </div>
+      </header>
+
+      <div class="scroll-container">
+        <form id="configForm">
+          <section class="section">
+            <div class="section-header">
+              <h2>Appearance</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="size">Size</label>
+                <div class="field-right">
+                  <input
+                    type="range"
+                    id="size"
+                    min="40"
+                    max="300"
+                    value="120"
+                  />
+                  <span class="value-display" data-for="size">120</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="theme">Theme</label>
+                <select id="theme">
+                  <option value="default">Default</option>
+                  <option value="aqua">Aqua</option>
+                  <option value="red">Red</option>
+                  <option value="glossy">Glossy</option>
+                  <option value="metal">Metal</option>
+                  <option value="neon">Neon</option>
+                  <option value="sunset">Sunset</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <h2>Sound</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="sound">Enable Sound</label>
+                <input type="checkbox" id="sound" />
+              </div>
+              <div class="field">
+                <label for="rollSoundLevel">Volume</label>
+                <div class="field-right">
+                  <input
+                    type="range"
+                    id="rollSoundLevel"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.45"
+                  />
+                  <span class="value-display" data-for="rollSoundLevel"
+                    >0.45</span
+                  >
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <h2>Haptics</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="haptics">Enable Haptics</label>
+                <input type="checkbox" id="haptics" />
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <h2>Scrolling</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="scrollMode">Scroll Mode</label>
+                <select id="scrollMode">
+                  <option value="page">Page</option>
+                  <option value="nearest">Nearest</option>
+                  <option value="horizontal">Horizontal</option>
+                  <option value="momentum">Momentum</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="scrollFallback">Fallback</label>
+                <select id="scrollFallback">
+                  <option value="document">Document</option>
+                  <option value="none">None</option>
+                  <option value="container">Container</option>
+                </select>
+              </div>
+              <div class="field" id="containerField">
+                <label for="scrollFallbackContainer">Selector</label>
+                <input
+                  type="text"
+                  id="scrollFallbackContainer"
+                  placeholder=".my-container"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <h2>Physics</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="friction">Friction</label>
+                <div class="field-right">
+                  <input
+                    type="range"
+                    id="friction"
+                    min="0.5"
+                    max="1"
+                    step="0.01"
+                    value="0.92"
+                  />
+                  <span class="value-display" data-for="friction">0.92</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="sensitivity">Sensitivity</label>
+                <div class="field-right">
+                  <input
+                    type="range"
+                    id="sensitivity"
+                    min="0.1"
+                    max="5"
+                    step="0.01"
+                    value="1.8"
+                  />
+                  <span class="value-display" data-for="sensitivity">1.8</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="snapDistance">Snap Distance</label>
+                <div class="field-right">
+                  <input
+                    type="range"
+                    id="snapDistance"
+                    min="10"
+                    max="300"
+                    value="80"
+                  />
+                  <span class="value-display" data-for="snapDistance">80</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <h2>Stick Mode</h2>
+            </div>
+            <div class="card">
+              <div class="field">
+                <label for="stickMode">Enable</label>
+                <input type="checkbox" id="stickMode" checked />
+              </div>
+              <div class="field">
+                <label for="stickModeTargetCycleKey">Cycle Key</label>
+                <select id="stickModeTargetCycleKey">
+                  <option value="Shift">Shift</option>
+                  <option value="Alt">Alt</option>
+                  <option value="Control">Control</option>
+                  <option value="Meta">Meta</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="stickModeCycleSnap">Cycle Snap</label>
+                <input type="checkbox" id="stickModeCycleSnap" checked />
+              </div>
+            </div>
+          </section>
+        </form>
       </div>
-    </header>
 
-    <div class="scroll-container">
-      <form id="configForm">
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon appearance">Aa</div>
-            <h2>Appearance</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="size">Size</label>
-              <div class="field-right">
-                <input type="range" id="size" min="40" max="300" value="120">
-                <span class="value-display" data-for="size">120</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="theme">Theme</label>
-              <select id="theme">
-                <option value="default">Default</option>
-                <option value="aqua">Aqua</option>
-                <option value="red">Red</option>
-                <option value="glossy">Glossy</option>
-                <option value="metal">Metal</option>
-                <option value="neon">Neon</option>
-                <option value="sunset">Sunset</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon sound">♪</div>
-            <h2>Sound</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="sound">Enable Sound</label>
-              <input type="checkbox" id="sound">
-            </div>
-            <div class="field">
-              <label for="rollSoundLevel">Volume</label>
-              <div class="field-right">
-                <input type="range" id="rollSoundLevel" min="0" max="1" step="0.01" value="0.45">
-                <span class="value-display" data-for="rollSoundLevel">0.45</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon haptics">⚡</div>
-            <h2>Haptics</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="haptics">Enable Haptics</label>
-              <input type="checkbox" id="haptics">
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon scrolling">↕</div>
-            <h2>Scrolling</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="scrollMode">Scroll Mode</label>
-              <select id="scrollMode">
-                <option value="page">Page</option>
-                <option value="nearest">Nearest</option>
-                <option value="horizontal">Horizontal</option>
-                <option value="momentum">Momentum</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="scrollFallback">Fallback</label>
-              <select id="scrollFallback">
-                <option value="document">Document</option>
-                <option value="none">None</option>
-                <option value="container">Container</option>
-              </select>
-            </div>
-            <div class="field" id="containerField">
-              <label for="scrollFallbackContainer">Selector</label>
-              <input type="text" id="scrollFallbackContainer" placeholder=".my-container">
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon physics">◎</div>
-            <h2>Physics</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="friction">Friction</label>
-              <div class="field-right">
-                <input type="range" id="friction" min="0.5" max="1" step="0.01" value="0.92">
-                <span class="value-display" data-for="friction">0.92</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="sensitivity">Sensitivity</label>
-              <div class="field-right">
-                <input type="range" id="sensitivity" min="0.1" max="5" step="0.01" value="1.8">
-                <span class="value-display" data-for="sensitivity">1.8</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="snapDistance">Snap Distance</label>
-              <div class="field-right">
-                <input type="range" id="snapDistance" min="10" max="300" value="80">
-                <span class="value-display" data-for="snapDistance">80</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <div class="section-icon stick">⌁</div>
-            <h2>Stick Mode</h2>
-          </div>
-          <div class="card">
-            <div class="field">
-              <label for="stickMode">Enable</label>
-              <input type="checkbox" id="stickMode" checked>
-            </div>
-            <div class="field">
-              <label for="stickModeTargetCycleKey">Cycle Key</label>
-              <select id="stickModeTargetCycleKey">
-                <option value="Shift">Shift</option>
-                <option value="Alt">Alt</option>
-                <option value="Control">Control</option>
-                <option value="Meta">Meta</option>
-                <option value="None">None</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="stickModeCycleSnap">Cycle Snap</label>
-              <input type="checkbox" id="stickModeCycleSnap" checked>
-            </div>
-          </div>
-        </section>
-      </form>
+      
     </div>
-
-    <footer>
-      <button type="submit" form="configForm">Save Settings</button>
-    </footer>
-  </div>
-  <script type="module" src="./src/popup.ts"></script>
-</body>
+    <script type="module" src="./src/popup.ts"></script>
+  </body>
 </html>
