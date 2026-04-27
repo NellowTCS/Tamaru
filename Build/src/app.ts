@@ -15,7 +15,7 @@ import {
   showControls,
   hideControlsWithDelay,
 } from "./controlsManager";
-import { feedback } from "./sound";
+import { feedback, resumeIfNeeded } from "./sound";
 import { createPhysicsLoop } from "./physicsEngine";
 import { setupStickMode } from "./stickMode";
 
@@ -120,6 +120,7 @@ export class TamaruApp {
 
     handle.addEventListener("pointerdown", (e) => {
       this.isWidgetDragging = true;
+      resumeIfNeeded();
       this.container!.classList.add("is-dragging");
       this.startMouseX = e.clientX;
       this.startMouseY = e.clientY;
@@ -241,6 +242,7 @@ export class TamaruApp {
 
     viewport.addEventListener("pointerdown", (e) => {
       this.isTrackballDragging = true;
+      resumeIfNeeded();
       this.tbPrevMouseX = e.clientX;
       this.tbPrevMouseY = e.clientY;
       this.state.velX = 0;

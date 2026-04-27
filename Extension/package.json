@@ -8,9 +8,6 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "tamaru": "0.1.0"
-  },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",
     "@types/chrome": "^0.1.40",

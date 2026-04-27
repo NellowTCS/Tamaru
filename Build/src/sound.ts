@@ -59,6 +59,10 @@ class AudioEngine {
     }
   }
 
+  public resumeIfNeeded() {
+    this.tryResume();
+  }
+
   private out() {
     return this.compressor!;
   }
@@ -527,6 +531,8 @@ class AudioEngine {
 }
 
 const engine = new AudioEngine();
+
+export const resumeIfNeeded = () => engine.resumeIfNeeded();
 
 export function playSound(
   event: SoundEvent,

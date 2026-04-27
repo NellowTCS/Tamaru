@@ -1,4 +1,5 @@
 import { stickLogger } from "./logger";
+import { resumeIfNeeded } from "./sound";
 
 export interface StickModeOptions {
   onEnter: () => void;
@@ -43,6 +44,7 @@ export function setupStickMode(
   document.addEventListener("pointerlockchange", onPointerLockChange, false);
 
   stickBtn.addEventListener("click", () => {
+    resumeIfNeeded();
     if (document.pointerLockElement !== container) {
       if (typeof container.requestPointerLock !== "function") {
         stickLogger.warn("Pointer lock not supported on this device/browser.");
