@@ -11,6 +11,7 @@ A modular, self-contained JavaScript/TypeScript widget for adding a draggable, i
 - Trackball area for scrolling (with inertia)
 - "Stick Mode" (Pointer Lock) for absolute scrolling via mouse movement. Hold `Shift` while in stick mode to cycle targets.
 - Minimize/restore toggle
+- Start minimized option
 - Snap-to-edge logic
 - Theming system with multiple built-in color schemes (`default`, `aqua`, `red`, `glossy`, `metal`, `neon`, `sunset`)
 - Configurable sound and haptics feedback with naturalized mechanical variation

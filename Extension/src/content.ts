@@ -1,14 +1,11 @@
-import {
-  initVirtualTrackball,
-  updateVirtualTrackballConfig,
-} from "tamaru";
+import { initVirtualTrackball, updateVirtualTrackballConfig } from "tamaru";
 import type { TamaruConfig } from "./types";
 import { STORAGE_KEY } from "./types";
 
 const getConfig = (): Promise<TamaruConfig | undefined> =>
-  chrome.storage.sync.get(STORAGE_KEY).then(
-    (result) => result[STORAGE_KEY] as TamaruConfig | undefined,
-  );
+  chrome.storage.sync
+    .get(STORAGE_KEY)
+    .then((result) => result[STORAGE_KEY] as TamaruConfig | undefined);
 
 const init = async () => {
   const config = (await getConfig()) ?? {};

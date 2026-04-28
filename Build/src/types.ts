@@ -29,6 +29,7 @@ export interface TamaruConfig {
   sensitivity?: number;
   snapDistance?: number;
   size?: number;
+  startMinimized?: boolean;
   stickMode?: boolean;
   stickModeTargetCycleKey?: "Shift" | "Alt" | "Control" | "Meta" | "None";
   stickModeCycleSnap?: boolean;
@@ -47,6 +48,7 @@ export const DEFAULT_CONFIG: Required<TamaruConfig> = {
   sensitivity: 1.8,
   snapDistance: 80,
   size: 120,
+  startMinimized: false,
   stickMode: true,
   stickModeTargetCycleKey: "Shift",
   stickModeCycleSnap: true,

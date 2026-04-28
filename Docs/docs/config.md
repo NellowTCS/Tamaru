@@ -36,6 +36,11 @@ Type: `number`
 Default: `120`  
 Fixed square dimensions of the injected container in pixels.
 
+`startMinimized`  
+Type: `boolean`  
+Default: `false`  
+Whether Tamaru should start in minimized mode. Useful for extensions that want to start unobtrusively.
+
 ### Stick Mode
 
 `stickMode`  

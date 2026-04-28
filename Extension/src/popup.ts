@@ -50,6 +50,7 @@ const applyConfig = (config: TamaruConfig) => {
     "friction",
     "sensitivity",
     "snapDistance",
+    "startMinimized",
     "stickMode",
     "stickModeTargetCycleKey",
     "stickModeCycleSnap",
@@ -73,13 +74,19 @@ const collectConfig = (): TamaruConfig => ({
   haptics: getElement<HTMLInputElement>("haptics").checked,
   scrollMode: getElement<HTMLSelectElement>("scrollMode").value,
   scrollFallback: getElement<HTMLSelectElement>("scrollFallback").value,
-  scrollFallbackContainer: getElement<HTMLInputElement>("scrollFallbackContainer").value,
+  scrollFallbackContainer: getElement<HTMLInputElement>(
+    "scrollFallbackContainer",
+  ).value,
   friction: Number(getElement<HTMLInputElement>("friction").value),
   sensitivity: Number(getElement<HTMLInputElement>("sensitivity").value),
   snapDistance: Number(getElement<HTMLInputElement>("snapDistance").value),
+  startMinimized: getElement<HTMLInputElement>("startMinimized").checked,
   stickMode: getElement<HTMLInputElement>("stickMode").checked,
-  stickModeTargetCycleKey: getElement<HTMLSelectElement>("stickModeTargetCycleKey").value,
-  stickModeCycleSnap: getElement<HTMLInputElement>("stickModeCycleSnap").checked,
+  stickModeTargetCycleKey: getElement<HTMLSelectElement>(
+    "stickModeTargetCycleKey",
+  ).value,
+  stickModeCycleSnap:
+    getElement<HTMLInputElement>("stickModeCycleSnap").checked,
 });
 
 const updateValueDisplays = () => {
@@ -99,10 +106,14 @@ const updateContainerFieldVisibility = () => {
 };
 
 const setupEventListeners = () => {
-  const rangeInputs = document.querySelectorAll<HTMLInputElement>('input[type="range"]');
+  const rangeInputs = document.querySelectorAll<HTMLInputElement>(
+    'input[type="range"]',
+  );
   rangeInputs.forEach((input) => {
     input.addEventListener("input", () => {
-      const display = document.querySelector(`.value-display[data-for="${input.id}"]`);
+      const display = document.querySelector(
+        `.value-display[data-for="${input.id}"]`,
+      );
       if (display) display.textContent = input.value;
       autoSave();
     });
@@ -116,17 +127,23 @@ const setupEventListeners = () => {
     });
   });
 
-  const checkboxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(
+    'input[type="checkbox"]',
+  );
   checkboxes.forEach((cb) => {
     cb.addEventListener("change", autoSave);
   });
 
-  const textInputs = document.querySelectorAll<HTMLInputElement>('input[type="text"]');
+  const textInputs =
+    document.querySelectorAll<HTMLInputElement>('input[type="text"]');
   textInputs.forEach((txt) => {
     txt.addEventListener("input", autoSave);
   });
 
-  getElement<HTMLSelectElement>("scrollFallback").addEventListener("change", updateContainerFieldVisibility);
+  getElement<HTMLSelectElement>("scrollFallback").addEventListener(
+    "change",
+    updateContainerFieldVisibility,
+  );
 };
 
 let saveTimeout: number | undefined;

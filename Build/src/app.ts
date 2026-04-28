@@ -62,6 +62,10 @@ export class TamaruApp {
     this.currentTop = window.innerHeight - 120 - 24;
     this.updatePosition();
 
+    if (this.config.startMinimized) {
+      this.applyMiniState(true, true);
+    }
+
     this.bindWidgetDragging();
     this.bindMiniToggle();
     this.bindTrackball();

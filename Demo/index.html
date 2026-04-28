@@ -272,6 +272,10 @@
             </td>
           </tr>
           <tr>
+            <td>startMinimized</td>
+            <td><input id="cfg-startMinimized" type="checkbox" /></td>
+          </tr>
+          <tr>
             <td>stickMode</td>
             <td><input id="cfg-stickMode" type="checkbox" /></td>
           </tr>
@@ -453,6 +457,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
       sensitivity: 1.8,
       snapDistance: 80,
       size: 120,
+      startMinimized: false,
     };
 
     function $(id) { return document.getElementById(id); }
@@ -476,6 +481,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
         sensitivity: parseFloat($('cfg-sensitivity').value),
         snapDistance: parseInt($('cfg-snap').value, 10),
         size: parseInt($('cfg-size').value, 10),
+        startMinimized: $('cfg-startMinimized').checked,
         stickMode: $('cfg-stickMode').checked,
         stickModeTargetCycleKey: $('cfg-stickModeCycleKey').value,
         stickModeCycleSnap: $('cfg-stickModeCycleSnap').checked,
@@ -498,6 +504,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-sensitivity').value = DEFAULTS.sensitivity;
     $('cfg-snap').value = DEFAULTS.snapDistance;
     $('cfg-size').value = DEFAULTS.size;
+    $('cfg-startMinimized').checked = DEFAULTS.startMinimized;
     $('cfg-stickMode').checked = DEFAULTS.stickMode ?? true;
     $('cfg-stickModeCycleKey').value = DEFAULTS.stickModeTargetCycleKey ?? "Shift";
     $('cfg-stickModeCycleSnap').checked = DEFAULTS.stickModeCycleSnap ?? true;
@@ -505,7 +512,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
     $('cfg-fallback-selector').value = DEFAULTS.scrollFallbackContainer;
 
     // attach change listeners
-    const props = ['cfg-sound', 'cfg-roll-level', 'cfg-haptics', 'cfg-theme', 'cfg-enable-custom', 'cfg-sphereColor', 'cfg-textureColor', 'cfg-glow', 'cfg-miniIcon', 'cfg-scroll', 'cfg-friction', 'cfg-sensitivity', 'cfg-snap', 'cfg-size', 'cfg-stickMode', 'cfg-stickModeCycleKey', 'cfg-stickModeCycleSnap', 'cfg-fallback', 'cfg-fallback-selector'];
+    const props = ['cfg-sound', 'cfg-roll-level', 'cfg-haptics', 'cfg-theme', 'cfg-enable-custom', 'cfg-sphereColor', 'cfg-textureColor', 'cfg-glow', 'cfg-miniIcon', 'cfg-scroll', 'cfg-friction', 'cfg-sensitivity', 'cfg-snap', 'cfg-size', 'cfg-startMinimized', 'cfg-stickMode', 'cfg-stickModeCycleKey', 'cfg-stickModeCycleSnap', 'cfg-fallback', 'cfg-fallback-selector'];
     props.forEach(id => $(id).addEventListener('input', () => readAndApply()));
 
     function getInitialConfig() {
@@ -527,6 +534,7 @@ Morbi consectetur pharetra nisi, sit amet porta lectus posuere sed. Ut consequat
         sensitivity: parseFloat($('cfg-sensitivity').value),
         snapDistance: parseInt($('cfg-snap').value, 10),
         size: parseInt($('cfg-size').value, 10),
+        startMinimized: $('cfg-startMinimized').checked,
         stickMode: $('cfg-stickMode').checked,
         stickModeTargetCycleKey: $('cfg-stickModeCycleKey').value,
         stickModeCycleSnap: $('cfg-stickModeCycleSnap').checked,
