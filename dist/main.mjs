@@ -1658,6 +1658,7 @@ var DEFAULT_CONFIG = {
   sensitivity: 1.8,
   snapDistance: 80,
   size: 120,
+  startMinimized: false,
   stickMode: true,
   stickModeTargetCycleKey: "Shift",
   stickModeCycleSnap: true
@@ -2656,6 +2657,9 @@ var TamaruApp = class {
     this.currentLeft = window.innerWidth - 120 - 24;
     this.currentTop = window.innerHeight - 120 - 24;
     this.updatePosition();
+    if (this.config.startMinimized) {
+      this.applyMiniState(true, true);
+    }
     this.bindWidgetDragging();
     this.bindMiniToggle();
     this.bindTrackball();

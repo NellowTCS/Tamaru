@@ -13,6 +13,7 @@ interface TamaruConfig {
     sensitivity?: number;
     snapDistance?: number;
     size?: number;
+    startMinimized?: boolean;
     stickMode?: boolean;
     stickModeTargetCycleKey?: "Shift" | "Alt" | "Control" | "Meta" | "None";
     stickModeCycleSnap?: boolean;
