@@ -38,7 +38,7 @@ Since the extension is unsigned, you'll need to install it manually:
 2. Go to `chrome://extensions` and enable **Developer Mode** (top right)
 3. Click **Load unpacked** and select the unzipped folder
 
-Full steps with screenshots: [stackoverflow.com/a/24577660](https://stackoverflow.com/a/24577660)
+Full steps: [stackoverflow.com/a/24577660](https://stackoverflow.com/a/24577660)
 
 > Safari and Firefox support probably coming soon!
 
