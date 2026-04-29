@@ -28,7 +28,19 @@ Install via npm, pnpm, or yarn (for library usage):
 npm install tamaru
 ```
 
-## Usage
+### As a browser extension (Chrome)
+
+Download the latest `.crx` from the [releases page](https://github.com/NellowTCS/Tamaru/releases).
+
+Since the extension is unsigned, you'll need to install it manually:
+
+1. Unzip the `.crx` file (rename it to `.zip` if needed)
+2. Go to `chrome://extensions` and enable **Developer Mode** (top right)
+3. Click **Load unpacked** and select the unzipped folder
+
+Full steps with screenshots: [stackoverflow.com/a/24577660](https://stackoverflow.com/a/24577660)
+
+> Safari and Firefox support probably coming soon!
 
 ### As a module (ESM/TypeScript)
 
