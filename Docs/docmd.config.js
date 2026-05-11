@@ -1,6 +1,6 @@
 module.exports = {
   siteTitle: "Tamaru",
-  siteUrl: "https://nellowtcs.github.io/Tamaru/docs",
+  siteUrl: "https://nellowtcs.me/Tamaru/docs",
 
   logo: {
     alt: "Tamaru",
