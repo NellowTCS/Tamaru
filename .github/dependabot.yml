@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories: 
+      - "/Build"
+      - "/Docs"
+      - "/Extension"
+    schedule:
+      interval: "weekly"
