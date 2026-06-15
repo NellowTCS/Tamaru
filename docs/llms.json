@@ -1,0 +1,24 @@
+{
+  "title": "Tamaru",
+  "description": "",
+  "pages": [
+    {
+      "title": "API Reference",
+      "url": "https://nellowtcs.me/Tamaru/docs/api/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Configuration",
+      "url": "https://nellowtcs.me/Tamaru/docs/config/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Tamaru",
+      "url": "https://nellowtcs.me/Tamaru/docs/",
+      "description": "Skeuomorphic, momentum-based virtual trackball widget for the web",
+      "priority": "high"
+    }
+  ]
+}

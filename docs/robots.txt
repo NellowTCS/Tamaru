@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://nellowtcs.me/Tamaru/docs/sitemap.xml
