@@ -1,5 +1,5 @@
 import { mainLogger } from "./logger";
-import styles from "../styles/styles.css";
+import styles from "../styles/styles.css?inline";
 import { createWidgetContainer, injectStyleTag } from "./domManager";
 import { TrackballState, applyMovement, snapToEdge } from "./trackball";
 import { TamaruConfig, DEFAULT_CONFIG } from "./types";
