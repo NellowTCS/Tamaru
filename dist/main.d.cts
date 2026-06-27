@@ -27,4 +27,4 @@ declare function destroyVirtualTrackball(): void;
 declare function hideVirtualTrackball(): void;
 //#endregion
 export { destroyVirtualTrackball, hideVirtualTrackball, initVirtualTrackball, updateVirtualTrackballConfig };
-//# sourceMappingURL=main.d.mts.map
+//# sourceMappingURL=main.d.cts.map

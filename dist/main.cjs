@@ -1,3 +1,4 @@
+Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 //#region node_modules/@nisoku/satori/dist/satori.mjs
 var M = class {
 	constructor(e) {
@@ -2446,6 +2447,9 @@ function hideVirtualTrackball() {
 	if (tamaruInstance) tamaruInstance.hide();
 }
 //#endregion
-export { destroyVirtualTrackball, hideVirtualTrackball, initVirtualTrackball, updateVirtualTrackballConfig };
+exports.destroyVirtualTrackball = destroyVirtualTrackball;
+exports.hideVirtualTrackball = hideVirtualTrackball;
+exports.initVirtualTrackball = initVirtualTrackball;
+exports.updateVirtualTrackballConfig = updateVirtualTrackballConfig;
 
-//# sourceMappingURL=main.mjs.map
+//# sourceMappingURL=main.cjs.map
