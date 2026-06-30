@@ -1,21 +1,22 @@
 {
   "name": "tamaru",
   "version": "0.1.1",
+  "type": "module",
   "description": "Skeuomorphic, momentum-based virtual trackball widget for the web.",
   "license": "Apache-2.0",
-  "main": "dist/main.js",
+  "main": "dist/main.cjs",
   "module": "dist/main.mjs",
-  "types": "dist/main.d.ts",
+  "types": "dist/main.d.mts",
   "sideEffects": false,
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/main.d.ts",
+        "types": "./dist/main.d.mts",
         "default": "./dist/main.mjs"
       },
       "require": {
-        "types": "./dist/main.d.ts",
-        "default": "./dist/main.js"
+        "types": "./dist/main.d.cts",
+        "default": "./dist/main.cjs"
       }
     }
   },
@@ -23,7 +24,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "make-pretty": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md,html,cjs}'"
   },
@@ -37,9 +38,10 @@
   },
   "homepage": "https://github.com/NellowTCS/Tamaru#readme",
   "devDependencies": {
-    "@types/node": "^26.0.0",
-    "prettier": "^3.8.1",
-    "tsup": "^8.5.1",
+    "@types/node": "^26.0.1",
+    "prettier": "^3.9.0",
+    "@tsdown/css": "^0.22.3",
+    "tsdown": "^0.22.3",
     "typescript": "^6.0.3"
   },
   "dependencies": {
