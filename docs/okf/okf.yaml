@@ -1,0 +1,41 @@
+okf_version: 0.8.9
+bundle:
+  name: tamaru
+  title: Tamaru
+  description: ""
+  url: "https://nellowtcs.me/Tamaru/docs"
+  generated_by: "@docmd/plugin-okf"
+  generated_at: "2026-07-08T12:40:42.964Z"
+  default_type: concept
+stats:
+  concepts: 3
+  by_type:
+    api: 1
+    concept: 2
+  locales: 
+  versions: 
+concepts:
+  - id: api
+    type: api
+    title: "API Reference"
+    path: /api/
+    file: concepts/api.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: config
+    type: concept
+    title: Configuration
+    path: /config/
+    file: concepts/config.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: root
+    type: concept
+    title: Tamaru
+    path: /
+    file: concepts/root.md
+    locale: ""
+    version: ""
+    tags: 

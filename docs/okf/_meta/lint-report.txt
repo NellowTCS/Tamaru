@@ -1,0 +1,3 @@
+[WARN] missing-type /config/  (using fallback 'concept')
+[WARN] missing-type /  (using fallback 'concept')
+[WARN] orphan-concept root  (no inbound links)
