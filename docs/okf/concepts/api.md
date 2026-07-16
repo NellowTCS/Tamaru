@@ -3,10 +3,10 @@ type: api
 title: "API Reference"
 source: "https://nellowtcs.me/Tamaru/docs/api/"
 path: /api/
-updated: 2026-07-08
+updated: 2026-07-16
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-08T12:43:20.528Z"
+  generated_at: "2026-07-16T02:23:24.554Z"
 ---
 ---
 title: "API Reference"
