@@ -512,7 +512,8 @@ const k = {
 	samplingRate: .1,
 	strategy: "sample",
 	bufferSize: 100
-}, B = {
+};
+const B = {
 	enabled: !1,
 	windowMs: 5e3,
 	fields: [
@@ -521,12 +522,14 @@ const k = {
 		"level"
 	],
 	maxCacheSize: 1e3
-}, E = {
+};
+const E = {
 	enabled: !1,
 	failureThreshold: 5,
 	resetTimeout: 3e4,
 	successThreshold: 3
-}, y = {
+};
+const y = {
 	enableCallsite: !0,
 	enableEnvInfo: !0,
 	enableStateSnapshot: !1,
@@ -854,7 +857,8 @@ var W = class {
 		};
 	}
 };
-const m = new W(), x = /* @__PURE__ */ new Map();
+const m = new W();
+const x = /* @__PURE__ */ new Map();
 function K(s, e) {
 	return m.getCausalLink(s, e);
 }
