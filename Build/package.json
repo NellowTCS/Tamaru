@@ -42,7 +42,7 @@
     "prettier": "^3.9.0",
     "@tsdown/css": "^0.22.3",
     "tsdown": "^0.22.3",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@nisoku/satori": "^0.1.3",
