@@ -10,7 +10,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta name="generator" content="docmd v0.8.17">
+    <meta name="generator" content="docmd v0.9.2">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <script>
@@ -104,11 +104,11 @@
     
     
 
-    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mswlioxi">
-    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mswlioxi">
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mswlj09e">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mswlj09e">
     
-    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mswlioxi" id="hljs-light" >
-    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mswlioxi" id="hljs-dark" disabled>
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mswlj09e" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mswlj09e" id="hljs-dark" disabled>
     
     
 <meta name="description" content="A modular, responsive virtual trackball widget for the web.">
@@ -125,9 +125,11 @@
 
 
 
-<link rel="stylesheet" href="../assets/css/docmd-theme-sky.css?v=mswlioxi" >
-<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mswlioxi" >
-<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mswlioxi" >
+
+<link rel="stylesheet" href="../assets/css/docmd-theme-sky.css?v=mswlj09e" >
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mswlj09e" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mswlj09e" >
+<link rel="stylesheet" href="../assets/css/docmd-ai.css?v=mswlj09e" >
 
     
     
@@ -138,6 +140,9 @@
     data-copy-code-enabled="true" data-spa-enabled="true" data-source-file="docs/api.md">
 
     <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
 
     
     
@@ -392,9 +397,8 @@
         </div>
       </aside>
       
-      
-      
       <div class="main-content-wrapper">
+        
         
         
           <header class="page-header">
@@ -588,14 +592,14 @@
 <pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">import</span> { initVirtualTrackball } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;tamaru&quot;</span>;
 
 <span class="hljs-title function_">initVirtualTrackball</span>({
-  size<span class="hljs-punctuation">:</span> <span class="hljs-number">150</span>,
-  theme<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;default&quot;</span>
+  size<span class="hljs-operator">:</span> <span class="hljs-number">150</span>,
+  theme<span class="hljs-operator">:</span> <span class="hljs-string">&quot;default&quot;</span>
 });
 </code></pre>
 <p>Calling this multiple times is a no-op. To change parameters on the fly, use <code>updateVirtualTrackballConfig</code>.</p>
 <h2 id="api-reference-updatevirtualtrackballconfig" class="docmd-heading"><a href="#api-reference-updatevirtualtrackballconfig" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>updateVirtualTrackballConfig</code></h2>
 <p>Applies configuration changes safely without interrupting the physics loop.</p>
-<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">updateVirtualTrackballConfig</span>(newConfig<span class="hljs-punctuation">:</span> Partial<span class="hljs-punctuation">&lt;</span>TamaruConfig<span class="hljs-punctuation">&gt;</span>)<span class="hljs-punctuation">:</span> <span class="hljs-keyword">void</span>;
+<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">updateVirtualTrackballConfig</span>(newConfig<span class="hljs-operator">:</span> Partial<span class="hljs-operator">&lt;</span>TamaruConfig<span class="hljs-operator">&gt;</span>)<span class="hljs-operator">:</span> <span class="hljs-keyword">void</span>;
 </code></pre>
 <p>This merges the supplied configuration with the active state. Changes like <code>theme</code> or <code>size</code> trigger immediate visual reflows.</p>
 <h2 id="api-reference-destroyvirtualtrackball" class="docmd-heading"><a href="#api-reference-destroyvirtualtrackball" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>destroyVirtualTrackball</code></h2>
@@ -604,13 +608,13 @@
 </code></pre>
 <h2 id="api-reference-pausevirtualtrackball-resumevirtualtrackball" class="docmd-heading"><a href="#api-reference-pausevirtualtrackball-resumevirtualtrackball" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>pauseVirtualTrackball</code> &amp; <code>resumeVirtualTrackball</code></h2>
 <p>Temporarily disable or re-enable the widget input handling and physics loop. You don’t need to tear down the DOM nodes to pause interactions.</p>
-<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">pauseVirtualTrackball</span>()<span class="hljs-punctuation">:</span> <span class="hljs-keyword">void</span>;
-<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">resumeVirtualTrackball</span>()<span class="hljs-punctuation">:</span> <span class="hljs-keyword">void</span>;
+<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">pauseVirtualTrackball</span>()<span class="hljs-operator">:</span> <span class="hljs-keyword">void</span>;
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">resumeVirtualTrackball</span>()<span class="hljs-operator">:</span> <span class="hljs-keyword">void</span>;
 </code></pre>
 <h2 id="api-reference-hidevirtualtrackball-showvirtualtrackball" class="docmd-heading"><a href="#api-reference-hidevirtualtrackball-showvirtualtrackball" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>hideVirtualTrackball</code> &amp; <code>showVirtualTrackball</code></h2>
 <p>Toggles the widget <code>display</code> property. Useful for suppressing the widget during certain application states without losing kinetic state.</p>
-<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">hideVirtualTrackball</span>()<span class="hljs-punctuation">:</span> <span class="hljs-keyword">void</span>;
-<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">showVirtualTrackball</span>()<span class="hljs-punctuation">:</span> <span class="hljs-keyword">void</span>;
+<pre class="hljs"><code class="language-typescript"><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">hideVirtualTrackball</span>()<span class="hljs-operator">:</span> <span class="hljs-keyword">void</span>;
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">showVirtualTrackball</span>()<span class="hljs-operator">:</span> <span class="hljs-keyword">void</span>;
 </code></pre>
 
                 
@@ -703,13 +707,13 @@
             <div class="page-footer-actions">
               
               
-                <span class="git-last-updated" data-timestamp="1786932559000">
+                <span class="git-last-updated" data-timestamp="1786932570000">
                   <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                   <span class="git-label">Last updated:</span>
-                  <span class="git-time" data-timestamp="1786932559000"></span>
+                  <span class="git-time" data-timestamp="1786932570000"></span>
                   
                   <div class="git-commit-tooltip" role="tooltip">
                     <div class="git-tooltip-title">Recent commits</div>
@@ -722,10 +726,10 @@
                             
                           </div>
                           <div class="git-commit-details">
-                            <div class="git-commit-message" title="Merge pull request #39 from NellowTCS/dependabot/npm_and_yarn/Extension/types/chrome-0.2.5">Merge pull request #39 from NellowTCS...</div>
+                            <div class="git-commit-message" title="Merge pull request #37 from NellowTCS/dependabot/npm_and_yarn/Docs/mgks/docmd-0.9.2">Merge pull request #37 from NellowTCS...</div>
                             <div class="git-commit-meta">
                               <span class="git-commit-author">NellowTCS</span>
-                              <span class="git-commit-date" data-timestamp="1786932559000"></span>
+                              <span class="git-commit-date" data-timestamp="1786932570000"></span>
                             </div>
                           </div>
                         </li>
@@ -777,13 +781,14 @@
         </div>
       </div>
       
-      <script src="../assets/js/docmd-main.js?v=mswlioxi"></script>
+      <script src="../assets/js/docmd-main.js?v=mswlj09e"></script>
       
-      <script src="../assets/js/docmd-git.js?v=mswlioxi"></script>
-      <script src="../assets/js/docmd-image-lightbox.js?v=mswlioxi" ></script>
-<script src="../assets/js/vendor/minisearch.js?v=mswlioxi" ></script>
-<script src="../assets/js/docmd-search.js?v=mswlioxi" ></script>
-<script src="../assets/js/docmd-git.js?v=mswlioxi" type="module"></script>
+      <script src="../assets/js/docmd-git.js?v=mswlj09e"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mswlj09e" ></script>
+<script src="../assets/js/vendor/minisearch.js?v=mswlj09e" ></script>
+<script src="../assets/js/docmd-search.js?v=mswlj09e" ></script>
+<script src="../assets/js/docmd-git.js?v=mswlj09e" type="module"></script>
+<script src="../assets/js/docmd-ai.js?v=mswlj09e" type="module"></script>
 
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
   <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
@@ -859,6 +864,7 @@
     </script>
 
 <script>window.__git_config={"repo":"https://github.com/NellowTCS/Tamaru/edit/main/Docs/docs","branch":"main","editLink":true,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+<div id="docmd-ai-root"></div><script>window.__docmd_ai_config={"endpoint":"","cloud":{},"captcha":true,"position":"bottom-center","siteTitle":"Tamaru","siteBase":"/Tamaru/docs/","siteUrl":"https://nellowtcs.me/Tamaru/docs","versions":null,"i18n":null,"navigation":[{"title":"Home","path":"/","icon":"home"},{"title":"Configuration","path":"/config/","icon":"settings"},{"title":"API Reference","path":"/api/","icon":"file-code"},{"title":"Try the Demo","path":"/Tamaru/","icon":"play","external":true},{"title":"GitHub","path":"https://github.com/NellowTCS/Tamaru","icon":"github","external":true}],"searchCapabilities":{"keyword":true,"semantic":false},"isWorkspace":false,"workspaceProjects":[]};</script>
       
       
       
