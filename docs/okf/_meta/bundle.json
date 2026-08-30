@@ -1,12 +1,12 @@
 {
-  "okf_version": "0.9.3",
+  "okf_version": "0.9.4",
   "bundle": {
     "name": "tamaru",
     "title": "Tamaru",
     "description": "",
     "url": "https://nellowtcs.me/Tamaru/docs",
     "generated_by": "@docmd/plugin-okf",
-    "generated_at": "2026-08-30T04:59:12.544Z",
+    "generated_at": "2026-08-30T04:59:17.314Z",
     "default_type": "concept"
   },
   "stats": {
