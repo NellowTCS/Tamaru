@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/node": "^26.0.1",
     "prettier": "^3.9.0",
-    "@tsdown/css": "^0.22.3",
+    "@tsdown/css": "^0.23.0",
     "tsdown": "^0.22.3",
     "typescript": "^7.0.2"
   },
