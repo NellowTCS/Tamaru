@@ -193,9 +193,7 @@ var F = class {
 			case "tags":
 				t.push(`t:${e.tags.sort().join(",")}`);
 				break;
-			case "state":
-				e.state && t.push(`st:${b(e.state)}`);
-				break;
+			case "state": e.state && t.push(`st:${b(e.state)}`);
 		}
 		return t.join("|");
 	}
@@ -233,7 +231,7 @@ var F = class {
 	* Evict oldest entries when cache is full
 	*/
 	evictOldest() {
-		let e = null, t = Infinity;
+		let e = null, t = 1 / 0;
 		for (const [i, r] of this.cache.entries()) r.timestamp < t && (t = r.timestamp, e = i);
 		e && this.cache.delete(e);
 	}
@@ -707,11 +705,9 @@ function V(s) {
 		case "cloudflare-workers":
 			t.runtime = "cloudflare-workers";
 			break;
-		case "edge":
-			try {
-				t.edgeRuntime = globalThis.EdgeRuntime;
-			} catch {}
-			break;
+		case "edge": try {
+			t.edgeRuntime = globalThis.EdgeRuntime;
+		} catch {}
 	}
 	return t;
 }
@@ -760,7 +756,7 @@ var W = class {
 	/**
 	* Get all causes (direct and transitive) for an event
 	*/
-	getCauses(e, t = Infinity) {
+	getCauses(e, t = 1 / 0) {
 		const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
 			if (r.has(o) || a > t) return;
 			r.add(o);
@@ -772,7 +768,7 @@ var W = class {
 	/**
 	* Get all effects (direct and transitive) for an event
 	*/
-	getEffects(e, t = Infinity) {
+	getEffects(e, t = 1 / 0) {
 		const i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), n = (o, a) => {
 			if (r.has(o) || a > t) return;
 			r.add(o);
@@ -1536,9 +1532,10 @@ function cycleScrollableTarget(dx, dy, currentTarget) {
 	if (scrollableElements.length === 0) return null;
 	let currentIndex = scrollableElements.findIndex((el) => el === currentTarget);
 	if (currentIndex === -1) currentIndex = -1;
-	if (Math.abs(dx) > Math.abs(dy)) if (dx > 0) currentIndex = (currentIndex + 1) % scrollableElements.length;
-	else currentIndex = currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
-	else if (dy > 0) currentIndex = (currentIndex + 1) % scrollableElements.length;
+	if (Math.abs(dx) > Math.abs(dy)) {
+		if (dx > 0) currentIndex = (currentIndex + 1) % scrollableElements.length;
+		else currentIndex = currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
+	} else if (dy > 0) currentIndex = (currentIndex + 1) % scrollableElements.length;
 	else currentIndex = currentIndex <= 0 ? scrollableElements.length - 1 : currentIndex - 1;
 	const target = scrollableElements[currentIndex];
 	scrollableElements.forEach((el) => {
@@ -1565,11 +1562,13 @@ function setStickScrollTarget(target) {
 function resolveEffectiveScrollable(target, scrollFallback, scrollFallbackContainer) {
 	if (stickScrollTarget) return stickScrollTarget;
 	let scrollable = findNearestScrollable(target);
-	if (!scrollable) if (scrollFallback === "container" && scrollFallbackContainer) {
-		const el = document.querySelector(scrollFallbackContainer);
-		if (el) scrollable = el;
-	} else if (scrollFallback === "document") scrollable = document.scrollingElement || document.documentElement;
-	else scrollable = null;
+	if (!scrollable) {
+		if (scrollFallback === "container" && scrollFallbackContainer) {
+			const el = document.querySelector(scrollFallbackContainer);
+			if (el) scrollable = el;
+		} else if (scrollFallback === "document") scrollable = document.scrollingElement || document.documentElement;
+		else scrollable = null;
+	}
 	return scrollable;
 }
 function doScroll(dx, dy, mode, target, scrollFallback = "document", scrollFallbackContainer) {
@@ -1692,8 +1691,10 @@ function mount() {
 	labelElement.style.display = "none";
 	document.body.appendChild(labelElement);
 }
-if (typeof window !== "undefined") if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once: true });
-else mount();
+if (typeof window !== "undefined") {
+	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once: true });
+	else mount();
+}
 function triggerHaptic$1(duration = HAPTIC_DURATION_MS) {
 	if (typeof window === "undefined") return;
 	if (isIOS) {
@@ -2024,7 +2025,6 @@ var AudioEngine = class {
 				case "stop":
 					this.playStopSound(t, speed);
 					this.stopRollingSound(speed, false, rollScale);
-					break;
 			}
 		} catch {}
 	}

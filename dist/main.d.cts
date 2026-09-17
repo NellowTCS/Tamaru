@@ -21,10 +21,9 @@ interface TamaruConfig {
 }
 //#endregion
 //#region src/main.d.ts
-declare function initVirtualTrackball(config?: TamaruConfig): void;
-declare function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): void;
-declare function destroyVirtualTrackball(): void;
-declare function hideVirtualTrackball(): void;
+export declare function initVirtualTrackball(config?: TamaruConfig): void;
+export declare function updateVirtualTrackballConfig(newConfig: Partial<TamaruConfig>): void;
+export declare function destroyVirtualTrackball(): void;
+export declare function hideVirtualTrackball(): void;
 //#endregion
-export { destroyVirtualTrackball, hideVirtualTrackball, initVirtualTrackball, updateVirtualTrackballConfig };
 //# sourceMappingURL=main.d.cts.map
