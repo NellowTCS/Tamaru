@@ -17,7 +17,7 @@
     "@crxjs/vite-plugin": "^2.7.1",
     "@types/chrome": "^0.2.9",
     "@types/node": "^26.5.1",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.7",
     "typescript": "~7.0.2",
     "vite": "^8.2.2"
   }
