@@ -7,7 +7,7 @@ path: /
 updated: 2026-09-21
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-09-21T14:38:55.240Z"
+  generated_at: "2026-09-21T14:39:08.060Z"
 ---
 ---
 title: "Tamaru"
