@@ -4,10 +4,10 @@ title: Tamaru
 description: "Skeuomorphic, momentum-based virtual trackball widget for the web"
 source: "https://nellowtcs.me/Tamaru/docs/"
 path: /
-updated: 2026-09-21
+updated: 2026-10-09
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-09-21T15:10:38.706Z"
+  generated_at: "2026-10-09T11:58:11.563Z"
 ---
 ---
 title: "Tamaru"
