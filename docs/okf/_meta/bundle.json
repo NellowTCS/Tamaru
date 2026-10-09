@@ -1,12 +1,12 @@
 {
-  "okf_version": "0.9.5",
+  "okf_version": "0.9.6",
   "bundle": {
     "name": "tamaru",
     "title": "Tamaru",
     "description": "",
     "url": "https://nellowtcs.me/Tamaru/docs",
     "generated_by": "@docmd/plugin-okf",
-    "generated_at": "2026-10-09T11:58:36.348Z",
+    "generated_at": "2026-10-09T12:17:13.443Z",
     "default_type": "concept"
   },
   "stats": {
@@ -23,6 +23,7 @@
       "id": "api",
       "type": "api",
       "title": "API Reference",
+      "description": "",
       "path": "/api/",
       "file": "concepts/api.md",
       "locale": "",
@@ -33,6 +34,7 @@
       "id": "config",
       "type": "concept",
       "title": "Configuration",
+      "description": "",
       "path": "/config/",
       "file": "concepts/config.md",
       "locale": "",
@@ -43,6 +45,7 @@
       "id": "root",
       "type": "concept",
       "title": "Tamaru",
+      "description": "Skeuomorphic, momentum-based virtual trackball widget for the web",
       "path": "/",
       "file": "concepts/root.md",
       "locale": "",
