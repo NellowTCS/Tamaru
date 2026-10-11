@@ -14,7 +14,7 @@
     "tamaru": "v0.1.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.7.1",
+    "@crxjs/vite-plugin": "^3.0.0",
     "@types/chrome": "^0.3.0",
     "@types/node": "^26.6.4",
     "prettier": "^3.9.9",
