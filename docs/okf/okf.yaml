@@ -1,11 +1,11 @@
-okf_version: 0.9.6
+okf_version: 0.9.7
 bundle:
   name: tamaru
   title: Tamaru
   description: ""
   url: "https://nellowtcs.me/Tamaru/docs"
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-10-15T23:57:11.778Z"
+  generated_at: "2026-10-15T23:57:45.314Z"
   default_type: concept
 stats:
   concepts: 3
