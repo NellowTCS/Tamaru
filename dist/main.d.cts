@@ -26,4 +26,5 @@ export declare function updateVirtualTrackballConfig(newConfig: Partial<TamaruCo
 export declare function destroyVirtualTrackball(): void;
 export declare function hideVirtualTrackball(): void;
 //#endregion
+export {};
 //# sourceMappingURL=main.d.cts.map

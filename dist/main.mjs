@@ -1227,7 +1227,7 @@ ${e.errors.join(`
 		circuitBreaker: t.circuitBreaker,
 		enableMetrics: t.enableMetrics
 	});
-	!(typeof process < "u" && process.env?.NODE_ENV === "test") && t.enableConsole !== !1 && typeof console < "u" && i.subscribe((l) => {
+	(typeof process > "u" || process.env?.NODE_ENV !== "test") && t.enableConsole !== !1 && typeof console < "u" && i.subscribe((l) => {
 		const u = l.level;
 		(console[u === "debug" ? "log" : u] ?? console.log)(`[${l.scope}] ${l.message}`, l);
 	});
