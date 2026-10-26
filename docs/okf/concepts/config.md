@@ -3,10 +3,10 @@ type: concept
 title: Configuration
 source: "https://nellowtcs.me/Tamaru/docs/config/"
 path: /config/
-updated: 2026-10-21
+updated: 2026-10-26
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-10-21T17:20:27.255Z"
+  generated_at: "2026-10-26T18:07:41.856Z"
 ---
 ---
 title: "Configuration"

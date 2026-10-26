@@ -4,7 +4,7 @@
 
 ---
 
-## [API Reference](https://nellowtcs.me/Tamaru/docs/api/)
+## [API Reference](https://nellowtcs.me/Tamaru/docs/api/) (API)
 
 ---
 title: "API Reference"
@@ -68,7 +68,7 @@ export function showVirtualTrackball(): void;
 
 ---
 
-## [Configuration](https://nellowtcs.me/Tamaru/docs/config/)
+## [Configuration](https://nellowtcs.me/Tamaru/docs/config/) (Config)
 
 ---
 title: "Configuration"
